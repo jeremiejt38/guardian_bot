@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
-      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-      STAGING_GUILD_ID: ${{ secrets.STAGING_GUILD_ID }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node 22
