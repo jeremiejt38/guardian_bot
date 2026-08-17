@@ -20,14 +20,12 @@ jobs:
           node-version: '22'
       - name: Prepare test environment
         run: |
-          cat > .env <<'EOF'
-NODE_ENV=test
-DISCORD_TOKEN=dummy-token-for-ci
-CLIENT_ID=dummy-client-id
-BOT_ADMIN_ID=dummy-admin-id
-SERVER_SECRETS_KEY=dummy-secret-key
-DATABASE_PATH=./data/guardian-test.db
-EOF
+          echo "NODE_ENV=test" > .env
+          echo "DISCORD_TOKEN=dummy-token-for-ci" >> .env
+          echo "CLIENT_ID=dummy-client-id" >> .env
+          echo "BOT_ADMIN_ID=dummy-admin-id" >> .env
+          echo "SERVER_SECRETS_KEY=dummy-secret-key" >> .env
+          echo "DATABASE_PATH=./data/guardian-test.db" >> .env
       - name: Install deps
         run: |
           cd guardian
