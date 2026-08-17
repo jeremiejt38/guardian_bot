@@ -18,6 +18,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Prepare test environment
+        run: |
+          cat > .env <<'EOF'
+NODE_ENV=test
+DISCORD_TOKEN=dummy-token-for-ci
+CLIENT_ID=dummy-client-id
+BOT_ADMIN_ID=dummy-admin-id
+SERVER_SECRETS_KEY=dummy-secret-key
+DATABASE_PATH=./data/guardian-test.db
+EOF
       - name: Install deps
         run: |
           cd guardian
