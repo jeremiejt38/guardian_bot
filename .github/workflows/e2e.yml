@@ -37,7 +37,10 @@ EOF
           cd guardian
           npm test --silent
       - name: Run E2E (requires secrets)
-        if: ${{ env.DISCORD_TOKEN != '' && env.STAGING_GUILD_ID != '' }}
         run: |
+          if [ -z "$DISCORD_TOKEN" ] || [ -z "$STAGING_GUILD_ID" ]; then
+            echo "Skipping E2E: secrets not configured"
+            exit 0
+          fi
           cd guardian
           node e2e/run-e2e.js
