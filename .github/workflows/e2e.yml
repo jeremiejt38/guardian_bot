@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
+      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      STAGING_GUILD_ID: ${{ secrets.STAGING_GUILD_ID }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node 22
@@ -25,10 +27,7 @@ jobs:
           cd guardian
           npm test --silent
       - name: Run E2E (requires secrets)
-        if: ${{ secrets.DISCORD_TOKEN && secrets.STAGING_GUILD_ID }}
+        if: ${{ env.DISCORD_TOKEN != '' && env.STAGING_GUILD_ID != '' }}
         run: |
           cd guardian
           node e2e/run-e2e.js
-        env:
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          STAGING_GUILD_ID: ${{ secrets.STAGING_GUILD_ID }}
