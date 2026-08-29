@@ -30,8 +30,8 @@ Basé sur Epic H/I/J/F.
 Statut:
 - ✅ Persistance DB jeux / opt-in et vocaux temporaires (plusieurs issues fermées H/I)
 - ✅ Nettoyage auto des vocaux temporaires
-- 🔄 Catégories/channels Discord finaux à générer complètement (Epic F encore ouvert #22→#29)
-- 🔄 Changelog Steam encore en placeholder
+- ✅ Génération des catégories/channels Discord finalisée (Epic F fermé)
+- ✅ Changelog Steam automatique (module `gamesNotification`)
 
 ## Phase 4 — Modération (partiellement terminé)
 Basé sur Epic K/L/M/N.
@@ -39,22 +39,22 @@ Basé sur Epic K/L/M/N.
 Statut:
 - ✅ Commandes `/warn`, `/mute`, `/kick`, `/ban` (issues #51→#54 fermées)
 - ✅ Anti-spam de base (issue #58 fermée)
-- 🔄 `/historique` reste ouvert côté suivi projet (#55)
-- 🔄 Slow mode auto et interface comportement owner encore ouverts (#59, #62)
+- ✅ Commande `/historique` avec pagination
+- ✅ Panneau slow mode auto (`slowModePanel.js`)
+- ✅ Panneau comportement owner (`behaviorPanel.js`)
 
-## Phase 5 — Configuration par grade (en cours)
+## Phase 5 — Configuration par grade (terminé)
 Basé sur Epic P.
 
 Statut:
-- ✅ Une partie des interfaces config est marquée fermée (#66, #68, #69, #70)
-- 🔄 Interface config Membre+ reste ouverte (#67)
+- ✅ Interfaces de configuration par grade fermées (#66, #67, #68, #69, #70)
 
-## Phase 6 — Qualité & stabilisation (à faire)
+## Phase 6 — Qualité & stabilisation (partiellement terminé)
 Basé sur Epic Q/R.
 
 Statut:
-- 🔄 Tests unitaires ciblés encore ouverts (#71, #72, #73)
-- 🔄 Module Rich Presence optionnel ouvert (#74)
+- ✅ Couverture tests unitaires étendue (178 tests passent)
+- 🔄 Module Rich Presence optionnel ouvert (#74) — pas implémenté
 
 ## Phase 7 — Commands & admin recap (v0.27)
 - ✅ Permission startup check via DM
@@ -81,8 +81,12 @@ Statut:
 - ✅ Suggestions et vocaux temporaires améliorés
 
 ## Backlog prioritaire (prochaines étapes recommandées)
-1. Fermer Epic F (génération complète de la structure Discord).
-2. Finaliser la config Membre+ (issue #67).
-3. Finaliser `/historique`, slow mode et comportement owner (#55, #59, #62).
-4. Ajouter les tests unitaires Epic Q (#71/#72/#73).
-5. Finaliser le module Rich Presence optionnel (#74) si toujours pertinent.
+
+> Note : les issues GitHub du repo privé sont actuellement toutes fermées. Les items ci-dessous
+> correspondent aux pistes restantes identifiées dans la roadmap, à valider avec le besoin métier.
+
+1. Finaliser le module Rich Presence optionnel (#74) si toujours pertinent.
+2. Poursuivre l'amélioration de la robustesse du setup et des migrations versionnées.
+3. Étoffer la couverture de tests sur les nouveaux modules v0.30.x
+   (`paginatedSelect`, `versionedMigrations`, `setupGamesDetect`).
+4. Documenter le fonctionnement des nouveaux modules dans `docs/architecture.md`.
