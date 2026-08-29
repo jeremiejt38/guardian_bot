@@ -17,6 +17,7 @@ const { replyEphemeral } = require('../utils/interactions');
 const { memberHasAnyRole } = require('../utils/roles');
 const { t } = require('../../locales');
 const logger = require('../logs/logger');
+const { buildGameChannelTopics } = require('./gameList');
 
 const IDS = Object.freeze({
   addButton: 'servergames:add',
@@ -179,6 +180,7 @@ function buildGameCategoryOverwrites(guild, gameRoleId) {
 
 async function createDiscordResourcesForGame(guild, gameName, galerieEnabled, changelogEnabled) {
   const normalized = normalizeChannelName(gameName);
+  const topics = buildGameChannelTopics(gameName);
 
   const role = await guild.roles.create({
     name: gameName.slice(0, 100),
@@ -194,7 +196,8 @@ async function createDiscordResourcesForGame(guild, gameName, galerieEnabled, ch
   const text = await guild.channels.create({
     name: normalized,
     type: ChannelType.GuildText,
-    parent: category.id
+    parent: category.id,
+    topic: topics.text
   });
 
   let galerie = null;
@@ -202,7 +205,8 @@ async function createDiscordResourcesForGame(guild, gameName, galerieEnabled, ch
     galerie = await guild.channels.create({
       name: `${normalized}-galerie`.slice(0, 100),
       type: ChannelType.GuildText,
-      parent: category.id
+      parent: category.id,
+      topic: topics.galerie
     });
   }
 
@@ -211,7 +215,8 @@ async function createDiscordResourcesForGame(guild, gameName, galerieEnabled, ch
     changelog = await guild.channels.create({
       name: `${normalized}-changelogs`.slice(0, 100),
       type: ChannelType.GuildText,
-      parent: category.id
+      parent: category.id,
+      topic: topics.changelog
       // Read-only for members; bot still has ManageChannel permission.
     });
 
@@ -269,20 +274,33 @@ async function destroyDiscordResourcesForGame(guild, game) {
   }
 }
 
-function buildRemoveSelect(guildId, games) {
-  const options = games.slice(0, 25).map((game) => ({
-    label: game.name.slice(0, 100),
+function buildRemoveSelect(guildId, games, page = 0) {
+  const options = games.map((game) => ({
+    label: game.name,
     value: String(game.game_id)
   }));
 
-  return new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId(IDS.removeSelect)
-      .setPlaceholder(t('serverGames.removeSelectPlaceholder', {}, { guildId }))
-      .setMinValues(1)
-      .setMaxValues(1)
-      .addOptions(options)
+  const { buildPaginatedSelect } = require('../utils/paginatedSelect');
+  const { rows } = buildPaginatedSelect(
+    options,
+    IDS.removeSelect,
+    t('serverGames.removeSelectPlaceholder', {}, { guildId }),
+    page,
+    { minValues: 1, maxValues: 1 }
   );
+  return rows;
+}
+
+async function handleServerGamesPage(interaction) {
+  const { parsePaginatedCustomId } = require('../utils/paginatedSelect');
+  const { targetPage } = parsePaginatedCustomId(interaction.customId);
+  if (targetPage === null || Number.isNaN(targetPage)) return true;
+  const games = listServerGames(interaction.guildId);
+  await interaction.update({
+    content: t('serverGames.removeSelectPrompt', {}, { guildId: interaction.guildId }),
+    components: buildRemoveSelect(interaction.guildId, games, targetPage)
+  });
+  return true;
 }
 
 async function handleServerGamesInteraction(interaction) {
@@ -353,10 +371,14 @@ async function handleServerGamesInteraction(interaction) {
 
     await interaction.reply({
       content: t('serverGames.removeSelectPrompt', {}, { guildId: interaction.guildId }),
-      components: [buildRemoveSelect(interaction.guildId, games)],
+      components: buildRemoveSelect(interaction.guildId, games, 0),
       ephemeral: true
     });
     return true;
+  }
+
+  if (interaction.isButton() && interaction.customId.startsWith(`${IDS.removeSelect}:page:`)) {
+    return handleServerGamesPage(interaction);
   }
 
   if (interaction.isModalSubmit() && interaction.customId === IDS.addModal) {
@@ -400,7 +422,7 @@ async function handleServerGamesInteraction(interaction) {
     return true;
   }
 
-  if (interaction.isStringSelectMenu() && interaction.customId === IDS.removeSelect) {
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith(`${IDS.removeSelect}:`)) {
     if (!canManageServerGames(interaction.member, interaction.guildId)) {
       await replyEphemeral(interaction, t('serverGames.forbidden', {}, { guildId: interaction.guildId }));
       return true;

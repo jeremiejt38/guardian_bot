@@ -307,7 +307,7 @@ async function handleBotInteraction(interaction) {
       await replyEphemeral(interaction, '✅ La configuration est déjà terminée. Utilise `/status` pour voir l\'état.');
       return true;
     }
-    const payload = buildStepPayload(guildId, interaction.guild, step);
+    const payload = await buildStepPayload(guildId, interaction.guild, step);
     await interaction.reply({ embeds: payload.embeds, components: payload.components, ephemeral: true }).catch(() => {});
     return true;
   }

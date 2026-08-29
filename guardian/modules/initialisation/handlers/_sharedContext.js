@@ -65,7 +65,7 @@ function _ctx() {
 }
 
 const renderStep = (interaction, step) => _render.renderStep(interaction, step, _ctx());
-const buildStepPayload = (guildId, guild, step) => _render.buildStepPayload(guildId, guild, step, _ctx());
+const buildStepPayload = async (guildId, guild, step) => _render.buildStepPayload(guildId, guild, step, _ctx());
 const sendSetupMessage = (interaction, content) => _render.sendSetupMessage(interaction, content);
 const createRolesAutoHelper = (interaction, guild, guildId) => _gr.createRolesAutoHelper(interaction, guild, guildId, renderStep);
 const detectDuplicateGradeRoles = (guild) => _gr.detectDuplicateGradeRoles(guild);
@@ -84,6 +84,8 @@ const buildChannelAutoDetectComponents = () => _s.buildChannelAutoDetectComponen
 const addIgnoredChannelSlot = (guildId, k) => _s.addIgnoredChannelSlot(guildId, k);
 const getIgnoredChannelSlots = (guildId) => _s.getIgnoredChannelSlots(guildId);
 const buildChannelOptions = (guild, slot) => _s.buildChannelOptions(guild, slot);
+const buildStep3ChannelsContent = (guildId, guild) => _s.buildStep3ChannelsContent(guildId, guild, _ctx());
+const buildStep3ChannelsComponents = (guildId, guild) => _s.buildStep3ChannelsComponents(guildId, guild, _ctx());
 const getStep4Config = (guildId, guild) => _s.getStep4Config(guildId, guild);
 const setStep4Config = (guildId, c) => _s.setStep4Config(guildId, c);
 const cycleReviewerGrade = (g) => _s.cycleReviewerGrade(g);
@@ -94,6 +96,8 @@ const getStep5Cursor = (guildId) => _s.getStep5Cursor(guildId);
 const setStep5Cursor = (guildId, c) => _s.setStep5Cursor(guildId, c);
 const getGamesPage = (guildId) => _s.getGamesPage(guildId);
 const setGamesPage = (guildId, p) => _s.setGamesPage(guildId, p);
+const getGamesLayoutMode = (guildId) => _s.getGamesLayoutMode(guildId);
+const setGamesLayoutMode = (guildId, m) => _s.setGamesLayoutMode(guildId, m);
 const ensureAtLeastOneSetupGame = (guildId) => _s.ensureAtLeastOneSetupGame(guildId);
 const getSteamCycleValue = (v) => _s.getSteamCycleValue(v);
 const cycleLogsLevel = (c) => _s.cycleLogsLevel(c);
@@ -106,6 +110,9 @@ const getDetectedGames = (guildId) => _gd.getDetectedGames(guildId);
 const setDetectedGames = (guildId, g) => _gd.setDetectedGames(guildId, g);
 const getGameLinkCursor = (guildId) => _gd.getGameLinkCursor(guildId);
 const setGameLinkCursor = (guildId, v) => _gd.setGameLinkCursor(guildId, v);
+const getGameReviewPage = (guildId) => _gd.getGameReviewPage(guildId);
+const setGameReviewPage = (guildId, v) => _gd.setGameReviewPage(guildId, v);
+const MAX_REVIEW_GAMES = _gd.MAX_REVIEW_GAMES;
 const getGameLinkActiveType = (guildId) => _gd.getGameLinkActiveType(guildId);
 const setGameLinkActiveType = (guildId, tp) => _gd.setGameLinkActiveType(guildId, tp);
 const detectExistingGameChannels = (guild) => _gd.detectExistingGameChannels(guild);
@@ -114,7 +121,7 @@ const buildGameDetectComponents = (guild) => _gd.buildGameDetectComponents(guild
 const buildGameReviewContent = (guildId) => _gd.buildGameReviewContent(guildId);
 const buildGameReviewComponents = (guildId) => _gd.buildGameReviewComponents(guildId, CUSTOM_IDS);
 const buildGameLinkContent = (guildId) => _gd.buildGameLinkContent(guildId);
-const buildGameLinkComponents = (guildId, guild) => _gd.buildGameLinkComponents(guildId, guild, CUSTOM_IDS, buildNavRow);
+const buildGameLinkComponents = (guildId, guild) => _gd.buildGameLinkComponents(guildId, guild, buildNavRow, 6);
 const buildNotifyMembersContent = (guildId) => _notif.buildNotifyMembersContent(guildId);
 const buildNotifyMembersComponents = () => _notif.buildNotifyMembersComponents(CUSTOM_IDS);
 const sendInstallNotifyDm = (member, guildId) => _notif.sendInstallNotifyDm(member, guildId);
@@ -148,12 +155,14 @@ module.exports = {
   getCachedAutoDetectedChannels, invalidateAutoDetectedChannels,
   buildChannelAutoDetectContent, buildChannelAutoDetectComponents,
   addIgnoredChannelSlot, getIgnoredChannelSlots, buildChannelOptions,
+  buildStep3ChannelsContent, buildStep3ChannelsComponents,
   getStep4Config, setStep4Config, cycleReviewerGrade, getStep4VocalConfig,
   cycleVocalPrefix, formatDelay, getStep5Cursor, setStep5Cursor,
-  getGamesPage, setGamesPage, ensureAtLeastOneSetupGame, getSteamCycleValue,
+  getGamesPage, setGamesPage, getGamesLayoutMode, setGamesLayoutMode, ensureAtLeastOneSetupGame, getSteamCycleValue,
   cycleLogsLevel, getStep7Config, setStep7Config,
   buildCommunityCheckContent, buildCommunityCheckComponents, normalizeChannelName,
   getDetectedGames, setDetectedGames, getGameLinkCursor, setGameLinkCursor,
+  getGameReviewPage, setGameReviewPage, MAX_REVIEW_GAMES,
   getGameLinkActiveType, setGameLinkActiveType, detectExistingGameChannels,
   buildGameDetectContent, buildGameDetectComponents, buildGameReviewContent, buildGameReviewComponents,
   buildGameLinkContent, buildGameLinkComponents,

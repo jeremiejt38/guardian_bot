@@ -4,19 +4,32 @@ function getChannelCache(guild) {
   return guild?.channels?.cache ?? null;
 }
 
+function normalizeChannelName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function namesMatch(a, b) {
+  if (a === b) return true;
+  return normalizeChannelName(a) === normalizeChannelName(b);
+}
+
 function findChannelByName(guild, name) {
-  return getChannelCache(guild)?.find((channel) => channel.name === name) ?? null;
+  return getChannelCache(guild)?.find((channel) => namesMatch(channel.name, name)) ?? null;
 }
 
 function findTextChannelByName(guild, name) {
   return getChannelCache(guild)?.find(
-    (channel) => channel.name === name && channel.isTextBased?.()
+    (channel) => namesMatch(channel.name, name) && channel.isTextBased?.()
   ) ?? null;
 }
 
 function findCategoryByName(guild, name) {
   return getChannelCache(guild)?.find(
-    (channel) => channel.type === ChannelType.GuildCategory && channel.name === name
+    (channel) => channel.type === ChannelType.GuildCategory && namesMatch(channel.name, name)
   ) ?? null;
 }
 
@@ -24,7 +37,7 @@ function findGuildTextChannelByName(guild, name, parentId) {
   return getChannelCache(guild)?.find(
     (channel) =>
       channel.type === ChannelType.GuildText &&
-      channel.name === name &&
+      namesMatch(channel.name, name) &&
       (parentId === undefined || channel.parentId === parentId)
   ) ?? null;
 }
@@ -33,7 +46,7 @@ function findGuildVoiceChannelByName(guild, name, parentId) {
   return getChannelCache(guild)?.find(
     (channel) =>
       channel.type === ChannelType.GuildVoice &&
-      channel.name === name &&
+      namesMatch(channel.name, name) &&
       (parentId === undefined || channel.parentId === parentId)
   ) ?? null;
 }
@@ -42,7 +55,7 @@ function findGuildForumChannelByName(guild, name, parentId) {
   return getChannelCache(guild)?.find(
     (channel) =>
       channel.type === ChannelType.GuildForum &&
-      channel.name === name &&
+      namesMatch(channel.name, name) &&
       (parentId === undefined || channel.parentId === parentId)
   ) ?? null;
 }

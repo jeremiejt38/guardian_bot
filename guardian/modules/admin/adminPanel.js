@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } = require('discord.js');
 const { setConfig, getConfig } = require('../../database/db');
 const { isBotAdmin, getBotAdminId, isRunningUnderPM2 } = require('./botUpdater');
 const logger = require('../logs/logger');
@@ -241,7 +241,7 @@ async function openOrRefreshPanel(client, view = null) {
       }
     }
 
-    const msg = await ch.send(content);
+    const msg = await ch.send({ ...content, flags: MessageFlags.SuppressNotifications });
     setPanelMessageId(msg.id);
     setPanelChannelId(ch.id);
 
@@ -311,16 +311,31 @@ function detectCurrentView(content) {
   return null;
 }
 
-async function pushPanelToBottom(client) {
+async function pushPanelToBottom(client, preserveMessageIds = []) {
   try {
     const ch = await getAdminDmChannel(client);
     if (!ch) return;
+
     const existingId = getPanelMessageId();
-    if (existingId) {
-      const existing = await ch.messages.fetch(existingId).catch(() => null);
-      if (existing) await existing.delete().catch(() => {});
+    if (existingId && !preserveMessageIds.includes(existingId)) {
+      preserveMessageIds.push(existingId);
     }
-    const msg = await ch.send(buildClosedContent());
+
+    const batch = await ch.messages.fetch({ limit: 50 }).catch(() => null);
+    if (batch) {
+      for (const msg of batch.values()) {
+        if (preserveMessageIds.includes(msg.id)) continue;
+        await msg.delete().catch(() => {});
+      }
+    }
+
+    let existingPanel = null;
+    if (existingId) {
+      existingPanel = await ch.messages.fetch(existingId).catch(() => null);
+      if (existingPanel) await existingPanel.delete().catch(() => {});
+    }
+
+    const msg = await ch.send({ ...buildClosedContent(), flags: MessageFlags.SuppressNotifications });
     setPanelMessageId(msg.id);
     setPanelChannelId(ch.id);
     cancelTimeout();
@@ -329,10 +344,40 @@ async function pushPanelToBottom(client) {
   }
 }
 
+async function sendAdminDmMessage(client, payload) {
+  try {
+    const ch = await getAdminDmChannel(client);
+    if (!ch) return null;
+
+    const batch = await ch.messages.fetch({ limit: 50 }).catch(() => null);
+    const preserve = [];
+    if (batch) {
+      for (const msg of batch.values()) {
+        if (msg.author?.id === client.user?.id && msg.id !== getPanelMessageId()) {
+          await msg.delete().catch(() => {});
+        }
+      }
+      const panelId = getPanelMessageId();
+      if (panelId) {
+        const panel = await ch.messages.fetch(panelId).catch(() => null);
+        if (panel) preserve.push(panelId);
+      }
+    }
+
+    const msg = await ch.send({ ...payload, flags: MessageFlags.SuppressNotifications });
+    await pushPanelToBottom(client, [...preserve, msg.id]);
+    return msg;
+  } catch (err) {
+    logger.warn('adminPanel: sendAdminDmMessage error', err);
+    return null;
+  }
+}
+
 module.exports = {
   openOrRefreshPanel,
   handlePanelInteraction,
   pushPanelToBottom,
+  sendAdminDmMessage,
   getNotifPref,
   setNotifPref,
   NOTIF_KEYS,

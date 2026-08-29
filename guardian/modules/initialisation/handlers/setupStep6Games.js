@@ -21,7 +21,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, StringSelect
   addIgnoredChannelSlot, getIgnoredChannelSlots, buildChannelOptions,
   getStep4Config, setStep4Config, cycleReviewerGrade, getStep4VocalConfig,
   cycleVocalPrefix, formatDelay, getStep5Cursor, setStep5Cursor,
-  getGamesPage, setGamesPage, ensureAtLeastOneSetupGame, getSteamCycleValue,
+  getGamesPage, setGamesPage, getGamesLayoutMode, setGamesLayoutMode, ensureAtLeastOneSetupGame, getSteamCycleValue,
   cycleLogsLevel, getStep7Config, setStep7Config,
   buildCommunityCheckContent, buildCommunityCheckComponents, normalizeChannelName,
   getDetectedGames, setDetectedGames, getGameLinkCursor, setGameLinkCursor,
@@ -43,12 +43,15 @@ const {
 // @premium-end
 
 async function _handleStep6(guildId, interaction) {
+  const setEditorSubstep = () => setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
   if (interaction.customId === CUSTOM_IDS.gamePagePrev) {
     setGamesPage(guildId, getGamesPage(guildId) - 1);
+    setEditorSubstep();
     await renderStep(interaction, 6); return true;
   }
   if (interaction.customId === CUSTOM_IDS.gamePageNext) {
     setGamesPage(guildId, getGamesPage(guildId) + 1);
+    setEditorSubstep();
     await renderStep(interaction, 6); return true;
   }
 
@@ -72,6 +75,13 @@ async function _handleStep6(guildId, interaction) {
     const galerieEnabled = false;
     const changelogEnabled = true;
     let steamResult = null;
+    let deferredReply = false;
+    try {
+      await interaction.deferReply({ ephemeral: true });
+      deferredReply = true;
+    } catch (err) {
+      logger.warn('addGameModal: deferReply failed', { error: err?.message });
+    }
     try {
       const encoded = encodeURIComponent(name);
       const res = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encoded}&l=french&cc=FR`);
@@ -85,50 +95,24 @@ async function _handleStep6(guildId, interaction) {
     } catch (err) {
       logger.error('Steam search error', { error: err?.message, name });
     }
-    if (!steamResult) {
-      const confirmModal = new ModalBuilder()
-        .setCustomId(`${CUSTOM_IDS.addGameConfirmModal}:${encodeURIComponent(name)}`)
-        .setTitle('⚠️ Jeu non trouvé sur Steam');
-      confirmModal.addComponents(
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId('name').setLabel('Nom du jeu (corriger si besoin)')
-            .setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(64)
-            .setValue(name)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId('steam_id').setLabel('Steam ID (laisser vide si jeu non Steam)')
-            .setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(20)
-            .setPlaceholder('Ex: 730 pour CS2 — vide si non disponible sur Steam')
-        )
-      );
-      await interaction.showModal(confirmModal).catch((err) => logger.warn('showModal failed (confirmModal)', { error: err?.message })); return true;
-    }
-    let deferredReply = false;
-    try {
-      await interaction.deferReply({ ephemeral: true });
-      deferredReply = true;
-    } catch (err) {
-      logger.warn('addGameModal: deferReply failed', { error: err?.message });
-    }
+
     let game;
     try {
       game = addSetupGame(guildId, {
-        name: steamResult.name,
-        steam_app_id: String(steamResult.id),
+        name: steamResult?.name || name,
+        steam_app_id: steamResult ? String(steamResult.id) : null,
         galerie_enabled: galerieEnabled,
         changelog_enabled: changelogEnabled
       });
       logger.info('Game added', { guildId, name: game.name, steam_app_id: game.steam_app_id });
     } catch (err) {
       logger.error('addSetupGame failed', { error: err?.message, guildId, name });
-      if (deferredReply) await interaction.deleteReply().catch(() => {});
+      if (deferredReply) await interaction.editReply({ content: '❌ Impossible d\'ajouter ce jeu (nom en doublon ?).' }).catch(() => {});
       return true;
     }
     const confirmMsg = [
       `✅ **Jeu ajouté : ${game.name}**`,
-      `> Trouvé sur Steam : ID \`${game.steam_app_id}\``,
+      game.steam_app_id ? `> Trouvé sur Steam : ID \`${game.steam_app_id}\`` : '> Jeu non Steam — le suivi des mises à jour Steam ne sera pas disponible.',
       '',
       'Tu peux modifier ce jeu à tout moment avec le bouton ✏️.'
     ].filter(Boolean).join('\n');
@@ -139,6 +123,7 @@ async function _handleStep6(guildId, interaction) {
       logger.error('addGameModal: channel.send failed', { error: err?.message });
     }
     if (deferredReply) await interaction.deleteReply().catch(() => {});
+    setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
     const wizardMsg = await interaction.channel.messages.fetch({ limit: 20 })
       .then((msgs) => msgs.find((m) => m.author?.id === interaction.client?.user?.id && m.components?.length > 0))
       .catch((err) => { logger.error('addGameModal: fetch wizard msg failed', { error: err?.message }); return null; });
@@ -154,13 +139,15 @@ async function _handleStep6(guildId, interaction) {
   if (interaction.isModalSubmit() && interaction.customId?.startsWith(`${CUSTOM_IDS.addGameConfirmModal}:`)) {
     const name = interaction.fields.getTextInputValue('name').trim();
     const steamId = interaction.fields.getTextInputValue('steam_id').trim() || null;
-    try { await interaction.deferUpdate(); } catch {}
+    let deferredReply = false;
+    try { await interaction.deferReply({ ephemeral: true }); deferredReply = true; } catch {}
     let game;
     try {
       game = addSetupGame(guildId, { name, steam_app_id: steamId, galerie_enabled: false, changelog_enabled: true });
       logger.info('Game added (non-Steam)', { guildId, name: game.name, steam_app_id: game.steam_app_id });
     } catch (err) {
       logger.error('addGameConfirmModal: addSetupGame failed', { error: err?.message });
+      if (deferredReply) await interaction.editReply({ content: '❌ Impossible d\'ajouter ce jeu (nom en doublon ?).' }).catch(() => {});
       return true;
     }
     const confirmMsg = [
@@ -170,6 +157,7 @@ async function _handleStep6(guildId, interaction) {
       'Tu peux modifier ce jeu à tout moment avec le bouton ✏️.'
     ].join('\n');
     try { const sent = await interaction.channel.send({ content: confirmMsg }); if (sent?.deletable !== false) setTimeout(() => sent?.delete().catch(() => {}), 5000); } catch {}
+    setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
     const wizardMsg = await interaction.channel.messages.fetch({ limit: 20 })
       .then((msgs) => msgs.find((m) => m.author?.id === interaction.client?.user?.id && m.components?.length > 0))
       .catch(() => null);
@@ -177,10 +165,11 @@ async function _handleStep6(guildId, interaction) {
       const fakeIx = { guildId, guild: interaction.guild, message: wizardMsg, channel: interaction.channel, deferUpdate: async () => {} };
       await renderStep(fakeIx, 6).catch(() => {});
     }
+    if (deferredReply) await interaction.deleteReply().catch(() => {});
     return true;
   }
 
-  if (interaction.customId?.startsWith(`${CUSTOM_IDS.editGamePrefix}:`)) {
+  if (interaction.isButton() && interaction.customId?.startsWith(`${CUSTOM_IDS.editGamePrefix}:`)) {
     const gameId = Number(interaction.customId.split(':').pop());
     const games = listSetupGames(guildId);
     const game = games.find((g) => g.game_id === gameId);
@@ -219,7 +208,9 @@ async function _handleStep6(guildId, interaction) {
     } catch (err) {
       logger.error('updateSetupGame failed', { error: err?.message, guildId, gameId });
     }
-    try { await interaction.deferUpdate(); } catch {}
+    let deferredReply = false;
+    try { await interaction.deferReply({ ephemeral: true }); deferredReply = true; } catch {}
+    setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
     const wizardMsg = await interaction.channel.messages.fetch({ limit: 20 })
       .then((msgs) => msgs.find((m) => m.author?.id === interaction.client?.user?.id && m.components?.length > 0))
       .catch(() => null);
@@ -227,6 +218,7 @@ async function _handleStep6(guildId, interaction) {
       const fakeIx = { guildId, guild: interaction.guild, message: wizardMsg, channel: interaction.channel, deferUpdate: async () => {} };
       await renderStep(fakeIx, 6).catch((err) => logger.error('editGameModal: renderStep failed', { error: err?.message }));
     }
+    if (deferredReply) await interaction.deleteReply().catch(() => {});
     return true;
   }
 
@@ -234,25 +226,25 @@ async function _handleStep6(guildId, interaction) {
     const gameId = Number(interaction.customId.split(':').pop());
     const game = listSetupGames(guildId).find((g) => g.game_id === gameId);
     if (game) { updateSetupGame(guildId, gameId, { ...game, galerie_enabled: !game.galerie_enabled }); }
-    await renderStep(interaction, 6); return true;
+    setEditorSubstep(); await renderStep(interaction, 6); return true;
   }
   if (interaction.customId?.startsWith(`${CUSTOM_IDS.toggleGameChangelog}:`)) {
     const gameId = Number(interaction.customId.split(':').pop());
     const game = listSetupGames(guildId).find((g) => g.game_id === gameId);
     if (game) { updateSetupGame(guildId, gameId, { ...game, changelog_enabled: !game.changelog_enabled }); }
-    await renderStep(interaction, 6); return true;
+    setEditorSubstep(); await renderStep(interaction, 6); return true;
   }
   if (interaction.customId?.startsWith(`${CUSTOM_IDS.toggleGameText}:`)) {
     const gameId = Number(interaction.customId.split(':').pop());
     const game = listSetupGames(guildId).find((g) => g.game_id === gameId);
     if (game) { updateSetupGame(guildId, gameId, { ...game, text_channel_enabled: !game.text_channel_enabled }); }
-    await renderStep(interaction, 6); return true;
+    setEditorSubstep(); await renderStep(interaction, 6); return true;
   }
   if (interaction.customId?.startsWith(`${CUSTOM_IDS.deleteGamePrefix}:`)) {
     const gameId = Number(interaction.customId.split(':').pop());
     const db = require('../../database/db').getDb();
     db.prepare('DELETE FROM games WHERE guild_id = ? AND game_id = ?').run(guildId, gameId);
-    await renderStep(interaction, 6); return true;
+    setEditorSubstep(); await renderStep(interaction, 6); return true;
   }
 
   if (interaction.customId === CUSTOM_IDS.clearAllGames) {
@@ -260,7 +252,22 @@ async function _handleStep6(guildId, interaction) {
     db.prepare('DELETE FROM games WHERE guild_id = ?').run(guildId);
     setGuildSetting(guildId, 'setup', 'detected_games', null);
     setGamesPage(guildId, 0);
-    await renderStep(interaction, 6); return true;
+    setEditorSubstep(); await renderStep(interaction, 6); return true;
+  }
+
+  if (interaction.customId === CUSTOM_IDS.toggleGameLayoutMode) {
+    const { rebuildGameLayout } = require('../../games/gameList');
+    const current = getGamesLayoutMode(guildId);
+    const next = current === 'by-game' ? 'by-type' : 'by-game';
+    try {
+      await interaction.deferUpdate().catch(() => {});
+      await rebuildGameLayout(interaction.guild, next).catch((err) => {
+        logger.error('toggleGameLayoutMode: rebuildGameLayout failed', { error: err?.message, guildId });
+      });
+    } catch (err) {
+      logger.error('toggleGameLayoutMode error', { error: err?.message, guildId });
+    }
+    setEditorSubstep(); await renderStep(interaction, 6); return true;
   }
 
   return false;

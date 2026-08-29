@@ -40,7 +40,7 @@ const GUIDE_DEFINITIONS = [
         t(guildId, 'guides.gettingStarted.joinGames'),
         '',
         `-# *${t(guildId, 'guides.gettingStarted.footer')}*`
-      ].join('\\n');
+      ].join('\n');
     }
   },
   {
@@ -67,13 +67,13 @@ const GUIDE_DEFINITIONS = [
         t(guildId, 'guides.membership.whatIs'),
         '',
         `## ${t(guildId, 'guides.membership.prereqTitle')}`,
-        prereqs.map((p) => `- ${p}`).join('\\n'),
+        prereqs.map((p) => `- ${p}`).join('\n'),
         '',
         `## ${t(guildId, 'guides.membership.howToTitle')}`,
-        t(guildId, 'guides.membership.howTo').join('\\n'),
+        t(guildId, 'guides.membership.howTo').join('\n'),
         '',
         `-# *${t(guildId, 'guides.membership.footer')}*`
-      ].join('\\n');
+      ].join('\n');
     }
   },
   {
@@ -88,13 +88,13 @@ const GUIDE_DEFINITIONS = [
       t(guildId, 'guides.sponsorship.whatIs'),
       '',
       `## ${t(guildId, 'guides.sponsorship.howGetTitle')}`,
-      t(guildId, 'guides.sponsorship.howGet').map((l) => `- ${l}`).join('\\n'),
+      t(guildId, 'guides.sponsorship.howGet').map((l) => `- ${l}`).join('\n'),
       '',
       `## ${t(guildId, 'guides.sponsorship.howSponsorTitle')}`,
-      t(guildId, 'guides.sponsorship.howSponsor').map((l) => `- ${l}`).join('\\n'),
+      t(guildId, 'guides.sponsorship.howSponsor').map((l) => `- ${l}`).join('\n'),
       '',
       `-# *${t(guildId, 'guides.sponsorship.footer')}*`
-    ].join('\\n')
+    ].join('\n')
   },
   {
     key: 'games',
@@ -108,13 +108,13 @@ const GUIDE_DEFINITIONS = [
       t(guildId, 'guides.games.how'),
       '',
       `## ${t(guildId, 'guides.games.optInTitle')}`,
-      t(guildId, 'guides.games.optIn').join('\\n'),
+      t(guildId, 'guides.games.optIn').join('\n'),
       '',
       `## ${t(guildId, 'guides.games.suggestTitle')}`,
       t(guildId, 'guides.games.suggest'),
       '',
       `-# *${t(guildId, 'guides.games.footer')}*`
-    ].join('\\n')
+    ].join('\n')
   },
   {
     key: 'commands',
@@ -125,16 +125,16 @@ const GUIDE_DEFINITIONS = [
       `# ⌨️ ${t(guildId, 'guides.commands.title')}`,
       '',
       `## ${t(guildId, 'guides.commands.memberTitle')}`,
-      t(guildId, 'guides.commands.member').map((l) => `- ${l}`).join('\\n'),
+      t(guildId, 'guides.commands.member').map((l) => `- ${l}`).join('\n'),
       '',
       `## ${t(guildId, 'guides.commands.staffTitle')}`,
-      t(guildId, 'guides.commands.staff').map((l) => `- ${l}`).join('\\n'),
+      t(guildId, 'guides.commands.staff').map((l) => `- ${l}`).join('\n'),
       '',
       `## ${t(guildId, 'guides.commands.configTitle')}`,
       t(guildId, 'guides.commands.config'),
       '',
       `-# *${t(guildId, 'guides.commands.footer')}*`
-    ].join('\\n')
+    ].join('\n')
   }
 ];
 
@@ -190,6 +190,7 @@ async function createCommunityGuides(guild) {
       });
     } else {
       await ch.permissionOverwrites.set(readOnlyPerms).catch(() => {});
+      await ch.edit({ topic: `${def.emoji} ${def.title(guildId)} — Guardian Guide` }).catch(() => {});
     }
 
     if (ch) {
@@ -227,6 +228,7 @@ async function createForumGuides(guild) {
         });
       } else {
         await ch.permissionOverwrites.set(readOnlyPerms).catch(() => {});
+        await ch.edit({ topic: `${def.emoji} ${def.title(guildId)} — Guardian Guide` }).catch(() => {});
       }
       if (ch) {
         const content = def.buildContent(guild, guildId);
@@ -254,6 +256,7 @@ async function createForumGuides(guild) {
       });
     } else {
       await forum.permissionOverwrites.set(readOnlyPerms).catch(() => {});
+      await forum.edit({ topic: `${def.emoji} ${def.title(guildId)} — Guardian Guide` }).catch(() => {});
     }
 
     if (forum) {
@@ -275,14 +278,39 @@ async function patchOnboardingDefaultChannels(guild, channelIds) {
     const current = await guild.fetchOnboarding().catch(() => null);
     if (!current) return false;
 
-    const existing = current.defaultChannels?.map((c) => c.id) ?? [];
-    const merged = [...new Set([...existing, ...channelIds])];
+    const existing = (current.defaultChannels || []).filter(Boolean).map((c) => c.id);
+    const validIds = [];
+    const everyone = guild.roles.everyone;
+    if (!everyone) {
+      logger.warn(`serverGuides: everyone role missing for guild ${guild.id}`);
+      return false;
+    }
 
-    await guild.client.rest.patch(`/guilds/${guild.id}/onboarding`, {
-      body: { default_channel_ids: merged }
+    for (const id of [...new Set(channelIds)]) {
+      const channel = guild.channels.cache.get(id);
+      if (!channel) continue;
+      const perms = channel.permissionsFor(everyone);
+      if (perms?.has(PermissionFlagsBits.ViewChannel)) {
+        validIds.push(id);
+      } else {
+        try {
+          await channel.permissionOverwrites.create(everyone, { ViewChannel: true });
+          validIds.push(id);
+        } catch (err) {
+          logger.warn(`serverGuides: cannot grant ViewChannel to @everyone for guide channel ${id}: ${err.message}`);
+        }
+      }
+    }
+
+    if (validIds.length === 0) return false;
+
+    const merged = [...new Set([...existing, ...validIds])];
+
+    await guild.client.rest.put(`/guilds/${guild.id}/onboarding`, {
+      body: { default_channel_ids: merged, enabled: true }
     });
 
-    logger.info(`serverGuides: patched onboarding default_channel_ids for guild ${guild.id} — added ${channelIds.length} guide channels`);
+    logger.info(`serverGuides: patched onboarding default_channel_ids for guild ${guild.id} — added ${validIds.length} guide channels`);
     return true;
   } catch (err) {
     logger.warn(`serverGuides: patchOnboarding failed for guild ${guild.id} — ${err.message}`);
@@ -295,7 +323,7 @@ async function notifyOwnerToAddGuides(guild, channels) {
   const owner = await guild.client.users.fetch(ownerId).catch(() => null);
   if (!owner) return;
 
-  const list = channels.map((c) => `- **#${c.name}** (<#${c.id}>)`).join('\\n');
+  const list = channels.map((c) => `- **#${c.name}** (<#${c.id}>)`).join('\n');
 
   await owner.send([
     `## 📚 Guardian — Guide channels created on **${guild.name}**`,
@@ -309,7 +337,7 @@ async function notifyOwnerToAddGuides(guild, channels) {
     '2. Add each channel listed above as a resource',
     '',
     '-# *This message was sent because Guardian could not automatically configure the Server Guide (insufficient permissions or unsupported server type).*'
-  ].join('\\n')).catch(() => {});
+  ].join('\n')).catch(() => {});
 }
 
 async function seedGuidesChannels(guild) {

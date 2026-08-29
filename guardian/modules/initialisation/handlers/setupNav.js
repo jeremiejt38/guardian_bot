@@ -20,12 +20,14 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, StringSelect
   getStep2Config, setStep2Config, getActiveSlotsForInstall, autoDetectGuardianChannels,
   buildChannelAutoDetectContent, buildChannelAutoDetectComponents,
   addIgnoredChannelSlot, getIgnoredChannelSlots, buildChannelOptions,
+  buildStep3ChannelsContent, buildStep3ChannelsComponents,
   getStep4Config, setStep4Config, cycleReviewerGrade, getStep4VocalConfig,
   cycleVocalPrefix, formatDelay, getStep5Cursor, setStep5Cursor,
   getGamesPage, setGamesPage, ensureAtLeastOneSetupGame, getSteamCycleValue,
   cycleLogsLevel, getStep7Config, setStep7Config,
   buildCommunityCheckContent, buildCommunityCheckComponents, normalizeChannelName,
   getDetectedGames, setDetectedGames, getGameLinkCursor, setGameLinkCursor,
+  getGameReviewPage, setGameReviewPage, MAX_REVIEW_GAMES,
   getGameLinkActiveType, setGameLinkActiveType, detectExistingGameChannels,
   buildGameDetectContent, buildGameDetectComponents, buildGameReviewContent, buildGameReviewComponents,
   buildGameLinkContent, buildGameLinkComponents,
@@ -42,6 +44,25 @@ const {
   getAutoModConfig, applyAutoModRule, fetchOnboardingState, addOnboardingDefaultChannels,
 } = require('../discordSettings');
 // @premium-end
+
+function findAnnounceChannel(guild, preferredNames = ['bienvenue', 'general', 'faq']) {
+  if (!guild?.channels?.cache) return null;
+  const candidates = [...guild.channels.cache.values()]
+    .filter((c) => c.isTextBased?.() && !c.isDMBased?.() && !c.isThread?.())
+    .sort((a, b) => {
+      const ai = preferredNames.indexOf(a.name);
+      const bi = preferredNames.indexOf(b.name);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return a.position - b.position;
+    });
+  return candidates[0] || null;
+}
+
+function isChannelStillInGuild(guild, channel) {
+  return Boolean(channel?.id && guild?.channels?.cache?.has(channel.id));
+}
 
 async function _handleNavAndTransitions(guildId, interaction) {
   if (interaction.customId === CUSTOM_IDS.back) {
@@ -137,18 +158,25 @@ async function _handleNavAndTransitions(guildId, interaction) {
     }
 
     const nextStep = Math.min(currentStep + 1, TOTAL_STEPS);
+    if (nextStep === 6) {
+      setGuildSetting(guildId, 'setup', 'step', 6);
+      if (!getGuildSetting(guildId, 'setup', 'games_substep', null)) {
+        setGuildSetting(guildId, 'setup', 'games_substep', 'detect');
+      }
+      await renderStep(interaction, 6); return true;
+    }
     if (nextStep === 3 && interaction.guild) {
       await interaction.deferUpdate().catch(() => {});
       if (!isCommunityGuild(interaction.guild)) {
-        await interaction.message.edit({
+        await interaction.editReply({
           content: buildCommunityCheckContent(guildId, interaction.guild) + '\n\u200b',
           components: buildCommunityCheckComponents()
         }).catch(() => {});
         return true;
       }
-      await interaction.message.edit({
-        content: buildGameDetectContent(guildId, interaction.guild) + '\n\u200b',
-        components: buildGameDetectComponents(interaction.guild)
+      await interaction.editReply({
+        content: buildStep3ChannelsContent(guildId, interaction.guild) + '\n\u200b',
+        components: buildStep3ChannelsComponents(guildId, interaction.guild)
       }).catch(() => {});
       return true;
     }
@@ -166,7 +194,7 @@ async function _handleNavAndTransitions(guildId, interaction) {
       autoPositionChannelCursor(guildId, interaction.guild);
       await renderStep(interaction, 3);
     } else {
-      await interaction.message.edit({
+      await interaction.editReply({
         content: buildCommunityCheckContent(guildId, interaction.guild) + '\n\u200b',
         components: buildCommunityCheckComponents()
       }).catch(() => {});
@@ -199,7 +227,7 @@ async function _handleNavAndTransitions(guildId, interaction) {
 
   if (interaction.customId === CUSTOM_IDS.communityCheckContinue) {
     await interaction.deferUpdate().catch(() => {});
-    await interaction.message.edit({
+    await interaction.editReply({
       content: buildGameDetectContent(guildId, interaction.guild) + '\n\u200b',
       components: buildGameDetectComponents(interaction.guild)
     }).catch(() => {});
@@ -210,21 +238,50 @@ async function _handleNavAndTransitions(guildId, interaction) {
     await interaction.deferUpdate().catch(() => {});
     const games = detectExistingGameChannels(interaction.guild);
     setDetectedGames(guildId, games);
-    await interaction.message.edit({
+    setGameReviewPage(guildId, 0);
+    if (getCurrentStep(guildId) === 6) {
+      setGuildSetting(guildId, 'setup', 'games_substep', 'review');
+      await renderStep(interaction, 6); return true;
+    }
+    await interaction.editReply({
       content: buildGameReviewContent(guildId) + '\n\u200b',
       components: buildGameReviewComponents(guildId)
     }).catch(() => {});
     return true;
   }
 
+  if (interaction.customId === CUSTOM_IDS.gameReviewPrev) {
+    await interaction.deferUpdate().catch(() => {});
+    const page = getGameReviewPage(guildId);
+    if (page > 0) setGameReviewPage(guildId, page - 1);
+    setGuildSetting(guildId, 'setup', 'games_substep', 'review');
+    await renderStep(interaction, 6); return true;
+  }
+
   if (interaction.customId === CUSTOM_IDS.gameReviewContinue) {
     await interaction.deferUpdate().catch(() => {});
     const games = getDetectedGames(guildId);
+    const page = getGameReviewPage(guildId);
+    const totalPages = Math.max(1, Math.ceil(games.length / MAX_REVIEW_GAMES));
+    if (page + 1 < totalPages) {
+      setGameReviewPage(guildId, page + 1);
+      setGuildSetting(guildId, 'setup', 'games_substep', 'review');
+      await renderStep(interaction, 6); return true;
+    }
     setGameLinkCursor(guildId, 0);
     setGameLinkActiveType(guildId, null);
     for (const g of games) {
       const existing = listSetupGames(guildId).find((sg) => sg.name.toLowerCase() === (g.steamName || g.baseName).toLowerCase());
       if (!existing) addSetupGame(guildId, { name: g.steamName || g.baseName, steam_app_id: g.steamAppId || null });
+    }
+    setGameReviewPage(guildId, 0);
+    if (getCurrentStep(guildId) === 6) {
+      if (games.length === 0) {
+        setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
+      } else {
+        setGuildSetting(guildId, 'setup', 'games_substep', 'link');
+      }
+      await renderStep(interaction, 6); return true;
     }
     if (games.length === 0) {
       setGuildSetting(guildId, 'setup', 'step', 3);
@@ -233,7 +290,7 @@ async function _handleNavAndTransitions(guildId, interaction) {
       const slotsC = getActiveSlotsForInstall(guildId, interaction.guild);
       const anyFoundC = slotsC.some((s) => detectedC[s.key]);
       if (anyFoundC && !getGuildSetting(guildId, 'setup', 'channel_autodetect_done', false)) {
-        await interaction.message.edit({
+        await interaction.editReply({
           content: buildChannelAutoDetectContent(guildId, interaction.guild) + '\n\u200b',
           components: buildChannelAutoDetectComponents()
         }).catch(() => {});
@@ -241,7 +298,7 @@ async function _handleNavAndTransitions(guildId, interaction) {
         await renderStep(interaction, 3);
       }
     } else {
-      await interaction.message.edit({
+      await interaction.editReply({
         content: buildGameLinkContent(guildId) + '\n\u200b',
         components: buildGameLinkComponents(guildId, interaction.guild)
       }).catch(() => {});
@@ -271,13 +328,19 @@ async function _handleNavAndTransitions(guildId, interaction) {
   if (interaction.isModalSubmit() && interaction.customId === CUSTOM_IDS.gameReviewAddModal) {
     await interaction.deferUpdate().catch(() => {});
     const name = interaction.fields.getTextInputValue('name').trim();
+    let games = getDetectedGames(guildId);
     if (name) {
       const steamMatch = matchGameFromChannelName(name);
-      const games = getDetectedGames(guildId);
       games.push({ baseName: name, channels: [], steamName: steamMatch?.name ?? null, steamAppId: steamMatch?.appid ?? null });
       setDetectedGames(guildId, games);
     }
-    await interaction.message.edit({
+    const lastPage = Math.max(0, Math.ceil(games.length / MAX_REVIEW_GAMES) - 1);
+    setGameReviewPage(guildId, lastPage);
+    if (getCurrentStep(guildId) === 6) {
+      setGuildSetting(guildId, 'setup', 'games_substep', 'review');
+      await renderStep(interaction, 6); return true;
+    }
+    await interaction.editReply({
       content: buildGameReviewContent(guildId) + '\n\u200b',
       components: buildGameReviewComponents(guildId)
     }).catch(() => {});
@@ -290,7 +353,12 @@ async function _handleNavAndTransitions(guildId, interaction) {
     const games = getDetectedGames(guildId);
     games.splice(idx, 1);
     setDetectedGames(guildId, games);
-    await interaction.message.edit({
+    if (getCurrentStep(guildId) === 6) {
+      if (games.length === 0) setGuildSetting(guildId, 'setup', 'games_substep', 'detect');
+      else setGuildSetting(guildId, 'setup', 'games_substep', 'review');
+      await renderStep(interaction, 6); return true;
+    }
+    await interaction.editReply({
       content: buildGameReviewContent(guildId) + '\n\u200b',
       components: buildGameReviewComponents(guildId)
     }).catch(() => {});
@@ -299,13 +367,17 @@ async function _handleNavAndTransitions(guildId, interaction) {
 
   if (interaction.customId === CUSTOM_IDS.gameDetectSkip) {
     await interaction.deferUpdate().catch(() => {});
+    if (getCurrentStep(guildId) === 6) {
+      setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
+      await renderStep(interaction, 6); return true;
+    }
     setGuildSetting(guildId, 'setup', 'step', 3);
     setChannelCursor(guildId, 0);
     const detected = getCachedAutoDetectedChannels(guildId, interaction.guild, CHANNEL_SLOTS);
     const slots = getActiveSlotsForInstall(guildId, interaction.guild);
     const anyFound = slots.some((s) => detected[s.key]);
     if (anyFound && !getGuildSetting(guildId, 'setup', 'channel_autodetect_done', false)) {
-      await interaction.message.edit({
+      await interaction.editReply({
         content: buildChannelAutoDetectContent(guildId, interaction.guild) + '\n\u200b',
         components: buildChannelAutoDetectComponents()
       }).catch(() => {});
@@ -341,7 +413,11 @@ async function _handleNavAndTransitions(guildId, interaction) {
     const currentActive = getGameLinkActiveType(guildId);
     setGameLinkActiveType(guildId, currentActive === selectedType ? null : selectedType);
     await interaction.deferUpdate().catch(() => {});
-    await interaction.message.edit({
+    if (getCurrentStep(guildId) === 6) {
+      setGuildSetting(guildId, 'setup', 'games_substep', 'link');
+      await renderStep(interaction, 6); return true;
+    }
+    await interaction.editReply({
       content: buildGameLinkContent(guildId) + '\n\u200b',
       components: buildGameLinkComponents(guildId, interaction.guild)
     }).catch(() => {});
@@ -357,8 +433,14 @@ async function _handleNavAndTransitions(guildId, interaction) {
       const games = getDetectedGames(guildId);
       const game = games[gameCursor];
       if (game) {
-        const ch = game.channels.find((c) => c.type === channelType);
-        if (ch) { ch.linkedId = channelId; ch.linkedName = interaction.guild?.channels.cache.get(channelId)?.name || channelId; }
+        let ch = game.channels.find((c) => c.type === channelType);
+        if (!ch) {
+          const channelName = interaction.guild?.channels.cache.get(channelId)?.name || channelId;
+          ch = { id: channelId, name: channelName, type: channelType };
+          game.channels.push(ch);
+        }
+        ch.linkedId = channelId;
+        ch.linkedName = interaction.guild?.channels.cache.get(channelId)?.name || channelId;
         setDetectedGames(guildId, games);
         const setupGame = listSetupGames(guildId).find((sg) => sg.name.toLowerCase() === game.baseName.toLowerCase());
         if (setupGame) {
@@ -387,7 +469,11 @@ async function _handleNavAndTransitions(guildId, interaction) {
       }
     }
     await interaction.deferUpdate().catch(() => {});
-    await interaction.message.edit({
+    if (getCurrentStep(guildId) === 6) {
+      setGuildSetting(guildId, 'setup', 'games_substep', 'link');
+      await renderStep(interaction, 6); return true;
+    }
+    await interaction.editReply({
       content: buildGameLinkContent(guildId) + '\n\u200b',
       components: buildGameLinkComponents(guildId, interaction.guild)
     }).catch(() => {});
@@ -401,18 +487,26 @@ async function _handleNavAndTransitions(guildId, interaction) {
     setGameLinkActiveType(guildId, null);
     if (cursor < games.length - 1) {
       setGameLinkCursor(guildId, cursor + 1);
-      await interaction.message.edit({
+      if (getCurrentStep(guildId) === 6) {
+        setGuildSetting(guildId, 'setup', 'games_substep', 'link');
+        await renderStep(interaction, 6); return true;
+      }
+      await interaction.editReply({
         content: buildGameLinkContent(guildId) + '\n\u200b',
         components: buildGameLinkComponents(guildId, interaction.guild)
       }).catch(() => {});
     } else {
+      if (getCurrentStep(guildId) === 6) {
+        setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
+        await renderStep(interaction, 6); return true;
+      }
       setGuildSetting(guildId, 'setup', 'step', 3);
       setChannelCursor(guildId, 0);
       const detectedGL = getCachedAutoDetectedChannels(guildId, interaction.guild, CHANNEL_SLOTS);
       const slotsGL = getActiveSlotsForInstall(guildId, interaction.guild);
       const anyFoundGL = slotsGL.some((s) => detectedGL[s.key]);
       if (anyFoundGL && !getGuildSetting(guildId, 'setup', 'channel_autodetect_done', false)) {
-        await interaction.message.edit({
+        await interaction.editReply({
           content: buildChannelAutoDetectContent(guildId, interaction.guild) + '\n\u200b',
           components: buildChannelAutoDetectComponents()
         }).catch(() => {});
@@ -502,6 +596,12 @@ async function _handleNavAndTransitions(guildId, interaction) {
 
   if (interaction.customId === CUSTOM_IDS.notifyMembersYes || interaction.customId === CUSTOM_IDS.notifyMembersNo) {
     await interaction.deferUpdate().catch(() => {});
+    setGuildSetting(guildId, 'setup', 'finalizing', true);
+    await interaction.message?.edit({
+      content: '## ⏳ Installation en cours\n\nMerci de patienter pendant que Guardian finalise la configuration de ton serveur.\n\n> Cette opération peut prendre plusieurs minutes selon la taille de ton serveur et les fonctionnalités activées.',
+      components: []
+    }).catch(() => {});
+
     if (interaction.customId === CUSTOM_IDS.notifyMembersYes && interaction.guild) {
       const members = await interaction.guild.members.fetch().catch(() => null);
       if (members) {
@@ -514,20 +614,45 @@ async function _handleNavAndTransitions(guildId, interaction) {
         logger.info(`Guild ${guildId}: install notify DMs sent to ${sent} members`);
       }
     }
+
+    const user = await interaction.client.users.fetch(interaction.user.id).catch(() => null);
+    if (user) {
+      await user.send(`✅ La configuration de **${interaction.guild?.name || 'ton serveur'}** est en cours de finalisation par Guardian. Tu recevras une confirmation quand c'est terminé.`).catch(() => {});
+    }
+
     const { completeGuildSetup } = require('../setup');
     const { recordInstallVersion } = require('../../migrations/channelMigrations');
     const { saveConfigBackup } = require('../../config/configBackup');
     const { version } = require('../../../package.json');
+    const setupChannel = interaction.channel;
+    const announceChannel = findAnnounceChannel(interaction.guild);
     try {
       await completeGuildSetup(interaction.guild);
       recordInstallVersion(guildId, version);
       await saveConfigBackup(interaction.guild);
-      if (interaction.channel?.send) {
-        await interaction.channel.send({ content: t('setup.finalized', {}, { guildId }) });
+      // completeGuildSetup supprime le channel setup via cleanupSetupArea ;
+      // on envoie donc la confirmation dans un channel existant.
+      const target = isChannelStillInGuild(interaction.guild, setupChannel) ? setupChannel : announceChannel;
+      if (target?.send) {
+        await target.send({ content: t('setup.finalized', {}, { guildId }) });
       }
+      if (user) {
+        await user.send(`🎉 Guardian est installé sur **${interaction.guild?.name || 'ton serveur'}** !`).catch(() => {});
+      }
+      setGuildSetting(guildId, 'setup', 'finalizing', false);
     } catch (error) {
       logger.error('Failed to complete guild setup after notify', error);
+      setGuildSetting(guildId, 'setup', 'finalizing', false);
+      const target = isChannelStillInGuild(interaction.guild, setupChannel) ? setupChannel : announceChannel;
+      if (target?.send) {
+        await target.send({ content: '❌ Une erreur est survenue pendant la finalisation. Vérifie les permissions et réessaie.' }).catch(() => {});
+      }
+      if (user) {
+        await user.send(`❌ La finalisation de Guardian sur **${interaction.guild?.name || 'ton serveur'}** a échoué.`).catch(() => {});
+      }
+      return true;
     }
+
     return true;
   }
 

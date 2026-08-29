@@ -15,6 +15,9 @@ const IDS = Object.freeze({
   gameSelect: 'tempvoice:select'
 });
 
+// Messages éphémères invitant l'utilisateur à rejoindre son vocal temporaire
+const pendingJoinMessages = new Map();
+
 const LEGACY_CREATE_IDS = ['init.createChannel', 'creer:open'];
 
 function getMemberGrade(guildId, userId) {
@@ -72,25 +75,39 @@ function getNextVoiceName(guild, prefix, gameName, suffix) {
   return `${buildName(prefix, gameName, suffix, 0)}-${Date.now().toString().slice(-4)}`;
 }
 
-function buildGameSelect(guildId, games) {
+function buildGameSelect(guildId, games, page = 0) {
   const chatOption = {
     label: t('tempVoice.chatOption', {}, { guildId }) || '💬 Chat — salon sans jeu',
     value: 'chat',
     description: 'Créer un vocal sans jeu spécifique'
   };
-  const gameOptions = games.slice(0, 24).map((game) => ({
-    label: game.name.slice(0, 100),
+  const gameOptions = games.map((game) => ({
+    label: game.name,
     value: String(game.game_id)
   }));
 
-  return new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId(IDS.gameSelect)
-      .setPlaceholder(t('tempVoice.selectPlaceholder', {}, { guildId }))
-      .setMinValues(1)
-      .setMaxValues(1)
-      .addOptions([chatOption, ...gameOptions])
+  const { buildPaginatedSelect } = require('../utils/paginatedSelect');
+  const options = [chatOption, ...gameOptions];
+  const { rows } = buildPaginatedSelect(
+    options,
+    IDS.gameSelect,
+    t('tempVoice.selectPlaceholder', {}, { guildId }),
+    page,
+    { minValues: 1, maxValues: 1 }
   );
+  return rows;
+}
+
+async function handleTempVoicePage(interaction) {
+  const { parsePaginatedCustomId } = require('../utils/paginatedSelect');
+  const { targetPage } = parsePaginatedCustomId(interaction.customId);
+  if (targetPage === null || Number.isNaN(targetPage)) return true;
+  const games = getGuildGames(interaction.guildId);
+  await interaction.update({
+    content: t('tempVoice.selectPrompt', {}, { guildId: interaction.guildId }),
+    components: buildGameSelect(interaction.guildId, games, targetPage)
+  });
+  return true;
 }
 
 async function ensureTempVoicePanelForGuild(guild) {
@@ -138,13 +155,17 @@ async function handleTempVoiceInteraction(interaction) {
 
     await interaction.reply({
       content: t('tempVoice.selectPrompt', {}, { guildId: interaction.guildId }),
-      components: [buildGameSelect(interaction.guildId, games)],
+      components: buildGameSelect(interaction.guildId, games, 0),
       ephemeral: true
     });
     return true;
   }
 
-  if (interaction.isStringSelectMenu() && interaction.customId === IDS.gameSelect) {
+  if (interaction.isButton() && interaction.customId.startsWith(`${IDS.gameSelect}:page:`)) {
+    return handleTempVoicePage(interaction);
+  }
+
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith(`${IDS.gameSelect}:`)) {
     if (!canCreateTempVoice(interaction.guildId, interaction.user.id, interaction.member)) {
       await interaction.update({
         content: t('tempVoice.forbiddenInvite', {}, { guildId: interaction.guildId }),
@@ -171,9 +192,9 @@ async function handleTempVoiceInteraction(interaction) {
       gameName = game.name;
     }
 
-    const prefix = getGuildSetting(interaction.guildId, 'vocaux', 'name_prefix', '🎮');
-    const suffix = isChat ? '' : getGuildSetting(interaction.guildId, 'vocaux', 'name_suffix', 'Partie');
-    const userLimit = Math.max(0, Number(getGuildSetting(interaction.guildId, 'vocaux', 'max_members', 0)));
+    const prefix = getGuildSetting(interaction.guildId, 'vocal', 'prefix', '🎮');
+    const suffix = isChat ? '' : getGuildSetting(interaction.guildId, 'vocal', 'suffix', '— Partie');
+    const userLimit = Math.max(0, Number(getGuildSetting(interaction.guildId, 'vocal', 'member_limit', 0)));
     const category = interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildCategory && channel.name === CATEGORIES.vocaux
     );
@@ -188,9 +209,21 @@ async function handleTempVoiceInteraction(interaction) {
     const requester = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
     if (requester?.voice?.channel) {
       await requester.voice.setChannel(created).catch(() => undefined);
+      await interaction.update({ content: `✅ ${t('tempVoice.created', { channel: created.name }, { guildId: interaction.guildId })}`, components: [] }).catch(() => {});
+    } else {
+      try {
+        const msg = await interaction.followUp({
+          content: `🎙️ ${t('tempVoice.joinPrompt', { channel: `<#${created.id}>` }, { guildId: interaction.guildId })}`,
+          ephemeral: true
+        });
+        pendingJoinMessages.set(`${interaction.user.id}:${created.id}`, msg);
+        await interaction.update({ content: '\u200b', components: [] }).catch(() => {});
+      } catch (err) {
+        logger.warn('tempVoice: failed to send join prompt', { error: err?.message });
+        await interaction.update({ content: `✅ ${t('tempVoice.created', { channel: created.name }, { guildId: interaction.guildId })}`, components: [] }).catch(() => {});
+      }
     }
 
-    await interaction.update({ content: '\u200b', components: [] }).catch(() => {});
     return true;
   }
 
@@ -200,5 +233,6 @@ async function handleTempVoiceInteraction(interaction) {
 module.exports = {
   IDS,
   ensureTempVoicePanelForGuild,
-  handleTempVoiceInteraction
+  handleTempVoiceInteraction,
+  pendingJoinMessages
 };

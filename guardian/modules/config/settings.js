@@ -11,17 +11,18 @@ function getGuildSetting(guildId, moduleName, key, fallback = null) {
   return getConfig(guildId, moduleName, key, fallback);
 }
 
-async function ensureChannelMessage(channel, content) {
+async function ensureChannelMessage(channel, content, components = null) {
   if (!channel?.isTextBased?.()) {
     return;
   }
 
   if (!channel.lastMessageId) {
-    await channel.send(content);
+    await channel.send({ content, components });
   }
 }
 
 async function ensureMemberGameInterfaces(guild) {
+  const { buildOpenButtonRow } = require('../games/gameList');
   const gameChannelsChannel = findChannelByName(guild, CHANNELS.gameChannels);
   const gameListChannel = findChannelByName(guild, CHANNELS.gameList);
 
@@ -31,7 +32,8 @@ async function ensureMemberGameInterfaces(guild) {
   );
   await ensureChannelMessage(
     gameListChannel,
-    t(guild.id, 'settings.gameListHint')
+    t(guild.id, 'settings.gameListHint'),
+    [buildOpenButtonRow(guild.id)]
   );
 }
 

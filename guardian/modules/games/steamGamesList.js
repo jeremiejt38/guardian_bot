@@ -1,6 +1,10 @@
 const path = require('path');
 const GAMES_LIST = require(path.join(__dirname, '../../data/steamGames.json'));
 
+// Suffixes utilisés par Guardian pour les channels dérivés d'un jeu.
+// Ils ne doivent pas être considérés comme faisant partie du nom d'un jeu.
+const GAME_DERIVATIVE_SUFFIXES = ['-galerie', '-changelogs', '-updates', '-texte', '-chat', '-discussion'];
+
 const ALIASES = {
   'cs2': 'counter-strike 2',
   'csgo': 'counter-strike 2',
@@ -92,6 +96,7 @@ function normalize(str) {
 function matchGameFromChannelName(channelBaseName) {
   const raw = channelBaseName.toLowerCase().trim();
   if (GENERIC_CHANNEL_NAMES.has(raw)) return null;
+  if (GAME_DERIVATIVE_SUFFIXES.some((suffix) => raw.includes(suffix))) return null;
 
   const resolvedName = ALIASES[normalize(channelBaseName)] ?? channelBaseName;
   const input = normalize(resolvedName);
@@ -122,7 +127,16 @@ function matchGameFromChannelName(channelBaseName) {
     }
   }
 
-  return bestScore >= 50 ? bestMatch : null;
+  if (bestScore < 70) return null;
+
+  // Anti-faux positif : le channel ne doit pas être beaucoup plus long que le jeu
+  // matché (ex: steam-curation-gz ne doit pas matcher Steam).
+  const bestGameName = normalize(bestMatch.name);
+  if (input.length > bestGameName.length && bestGameName.length / input.length < 0.5) {
+    return null;
+  }
+
+  return bestMatch;
 }
 
 /**

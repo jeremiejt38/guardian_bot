@@ -2,13 +2,34 @@
 
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const { CHANNELS, CATEGORIES } = require('../../config');
-const { matchGameFromChannelName, generateNonSteamId, isNonSteamId, GENERIC_CHANNEL_NAMES } = require('../games/steamGamesList');
+const { matchGameFromChannelName, isNonSteamId, GENERIC_CHANNEL_NAMES } = require('../games/steamGamesList');
 const { getGuildSetting, setGuildSetting } = require('../config/settings');
+const { CUSTOM_IDS, TOTAL_STEPS } = require('./setupConstants');
+const logger = require('../logs/logger');
+
+const MAX_REVIEW_GAMES = 15;
+
+// Suffixes utilisés par Guardian pour les channels dérivés d'un jeu.
+// On les recherche n'importe où dans le nom pour éviter qu'un channel
+// renommé (ex: eco-galerie-photo) soit pris pour un jeu à part entière.
+const GAME_DERIVATIVE_SUFFIXES = ['-galerie', '-changelogs', '-updates', '-texte', '-chat', '-discussion'];
 
 // ── Détection jeux existants ──────────────────────────────────────────────────
 
 function normalizeGameSlug(name) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function extractGameBaseName(channelName) {
+  const lower = channelName.toLowerCase();
+  for (const suffix of GAME_DERIVATIVE_SUFFIXES) {
+    const idx = lower.indexOf(suffix);
+    if (idx !== -1) {
+      const base = lower.slice(0, idx).replace(/-+$/, '');
+      return base.length >= 3 ? base : null;
+    }
+  }
+  return lower;
 }
 
 const GUARDIAN_RESERVED_CHANNEL_NAMES = new Set(Object.values(CHANNELS));
@@ -29,16 +50,21 @@ function detectExistingGameChannels(guild) {
     return true;
   });
 
+  logger.info('detectExistingGameChannels: candidate channels', { guildId: guild.id, count: allText.length, names: allText.slice(0, 50).map((c) => c.name) });
+
   const gameMap = new Map();
   for (const ch of allText) {
     const n = ch.name;
-    const isGalerie = n.endsWith('-galerie');
-    const isChangelog = n.endsWith('-changelogs') || n.endsWith('-updates');
+    const baseName = extractGameBaseName(n);
+    if (!baseName) {
+      logger.debug('detectExistingGameChannels: no baseName extracted', { guildId: guild.id, channel: n });
+      continue;
+    }
     const isForum = ch.type === 15;
-    let baseName = n;
     let type = 'text';
-    if (isGalerie) { baseName = n.slice(0, -8); type = 'galerie'; }
-    else if (isChangelog) { baseName = n.endsWith('-changelogs') ? n.slice(0, -11) : n.slice(0, -8); type = 'changelog'; }
+    if (n.endsWith('-galerie')) type = 'galerie';
+    else if (n.endsWith('-changelogs') || n.endsWith('-updates')) type = 'changelog';
+    else if (n.endsWith('-chat') || n.endsWith('-discussion')) type = 'chat';
     if (isForum) type = 'forum';
     if (!gameMap.has(baseName)) gameMap.set(baseName, { baseName, channels: [] });
     gameMap.get(baseName).channels.push({ id: ch.id, name: ch.name, type });
@@ -49,22 +75,44 @@ function detectExistingGameChannels(guild) {
     .filter((g) => !GUARDIAN_RESERVED_BASE_NAMES.has(g.baseName.toLowerCase()))
     .filter((g) => {
       const norm = stripAccents(g.baseName.toLowerCase());
-      return !GENERIC_CHANNEL_NAMES.has(norm) && !GENERIC_CHANNEL_NAMES.has(g.baseName.toLowerCase());
+      const rejected = GENERIC_CHANNEL_NAMES.has(norm) || GENERIC_CHANNEL_NAMES.has(g.baseName.toLowerCase());
+      if (rejected) {
+        logger.info('detectExistingGameChannels: rejected generic name', { guildId: guild.id, baseName: g.baseName });
+      }
+      return !rejected;
     })
     .map((g) => {
       const steamMatch = matchGameFromChannelName(g.baseName);
       return {
         ...g,
         steamName: steamMatch?.name ?? null,
-        steamAppId: steamMatch?.appid != null ? String(steamMatch.appid) : generateNonSteamId()
+        steamAppId: steamMatch?.appid != null ? String(steamMatch.appid) : null
       };
+    })
+    .filter((g) => {
+      // Proposer automatiquement les jeux reconnus Steam,
+      // ou les noms non-génériques même avec un seul channel (permet de ratrapper les jeux non-Steam).
+      const keep = g.steamAppId || g.baseName.length >= 3;
+      if (!keep) {
+        logger.info('detectExistingGameChannels: rejected after steam match', { guildId: guild.id, baseName: g.baseName, channels: g.channels.length, steamAppId: g.steamAppId });
+      }
+      return keep;
     });
 
+  logger.info('detectExistingGameChannels: resolved games', { guildId: guild.id, count: resolved.length, games: resolved.map((g) => ({ baseName: g.baseName, steamAppId: g.steamAppId, channels: g.channels.length })) });
+
   const seenAppIds = new Set();
+  const seenNames = new Set();
   return resolved.filter((g) => {
-    const key = String(g.steamAppId);
-    if (seenAppIds.has(key)) return false;
-    seenAppIds.add(key);
+    if (g.steamAppId) {
+      const key = String(g.steamAppId);
+      if (seenAppIds.has(key)) return false;
+      seenAppIds.add(key);
+    } else {
+      const nameKey = g.baseName.toLowerCase();
+      if (seenNames.has(nameKey)) return false;
+      seenNames.add(nameKey);
+    }
     return true;
   });
 }
@@ -103,10 +151,22 @@ function setGameLinkCursor(guildId, v) {
   setGuildSetting(guildId, 'setup', 'game_link_cursor', Math.max(0, v));
 }
 
-function buildGameDetectContent(guildId, guild, TOTAL_STEPS) {
+function getGameReviewPage(guildId) {
+  const games = getDetectedGames(guildId);
+  const totalPages = Math.max(1, Math.ceil(games.length / MAX_REVIEW_GAMES));
+  const p = Number(getGuildSetting(guildId, 'setup', 'detected_games_review_page', 0)) || 0;
+  return Math.min(Math.max(0, p), totalPages - 1);
+}
+
+function setGameReviewPage(guildId, v) {
+  setGuildSetting(guildId, 'setup', 'detected_games_review_page', Math.max(0, v));
+}
+
+function buildGameDetectContent(guildId, guild, _TOTAL_STEPS) {
+  const stepTotal = _TOTAL_STEPS || TOTAL_STEPS;
   const games = detectExistingGameChannels(guild);
   const lines = [
-    `## 🎮 Jeux détectés (3/${TOTAL_STEPS})`,
+    `## 🎮 Jeux détectés (6/${stepTotal})`,
     '',
   ];
   if (games.length === 0) {
@@ -139,7 +199,7 @@ function buildGameDetectContent(guildId, guild, TOTAL_STEPS) {
   return lines.join('\n');
 }
 
-function buildGameDetectComponents(guild, CUSTOM_IDS) {
+function buildGameDetectComponents(guild) {
   const games = detectExistingGameChannels(guild);
   if (games.length === 0) {
     return [
@@ -158,34 +218,51 @@ function buildGameDetectComponents(guild, CUSTOM_IDS) {
 
 function buildGameReviewContent(guildId) {
   const games = getDetectedGames(guildId);
+  const page = getGameReviewPage(guildId);
+  const totalPages = Math.max(1, Math.ceil(games.length / MAX_REVIEW_GAMES));
+  const start = page * MAX_REVIEW_GAMES;
+  const pageGames = games.slice(start, start + MAX_REVIEW_GAMES);
   const lines = [
-    `## 🎮 Révision des jeux détectés`,
+    `## 🎮 Révision des jeux détectés (page ${page + 1}/${totalPages})`,
     ''
   ];
   if (games.length === 0) {
     lines.push('Aucun jeu dans la liste. Tu peux en ajouter manuellement ou continuer sans jeux.');
   } else {
     lines.push(`**${games.length} jeu(x) dans ta liste :**`, '');
-    for (const g of games) {
+    for (const [i, g] of pageGames.entries()) {
       const displayName = g.steamName || g.baseName;
       const steamLabel = g.steamAppId && !isNonSteamId(g.steamAppId) ? ` \`#${g.steamAppId}\`` : ' *(non-Steam)*';
       const chCount = g.channels?.length ?? 0;
-      lines.push(`> 🎮 **${displayName}**${steamLabel}${chCount > 0 ? ` — ${chCount} salon(s) détecté(s)` : ''}`);
+      const globalIndex = start + i + 1;
+      lines.push(`> **${globalIndex}.** 🎮 **${displayName}**${steamLabel}${chCount > 0 ? ` — ${chCount} salon(s) détecté(s)` : ''}`);
+    }
+    if (pageGames.length === 0) {
+      lines.push('> *Aucun jeu sur cette page.*');
     }
   }
-  lines.push('', '> Supprime les jeux indésirables, ajoute-en de nouveaux, puis clique sur **Continuer**.');
+  const isLast = page >= totalPages - 1;
+  const footer = isLast
+    ? '> Supprime les jeux indésirables avec les boutons 🗑️ ci-dessous, puis clique sur **Continuer** pour passer à l\'association des channels.'
+    : '> Supprime les jeux indésirables avec les boutons 🗑️ ci-dessous, puis clique sur **Continuer** pour voir les suivants.';
+  lines.push('', footer);
   return lines.join('\n');
 }
 
-function buildGameReviewComponents(guildId, CUSTOM_IDS) {
+function buildGameReviewComponents(guildId) {
   const games = getDetectedGames(guildId);
+  const page = getGameReviewPage(guildId);
+  const totalPages = Math.max(1, Math.ceil(games.length / MAX_REVIEW_GAMES));
+  const start = page * MAX_REVIEW_GAMES;
+  const pageGames = games.slice(start, start + MAX_REVIEW_GAMES);
   const rows = [];
 
-  const removeButtons = games.slice(0, 4).map((g, idx) => {
-    const label = (g.steamName || g.baseName).slice(0, 20);
+  const removeButtons = pageGames.map((g, i) => {
+    const label = (g.steamName || g.baseName).slice(0, 25);
     return new ButtonBuilder()
-      .setCustomId(`${CUSTOM_IDS.gameReviewRemovePrefix}${idx}`)
-      .setLabel(`🗑️ ${label}`)
+      .setCustomId(`${CUSTOM_IDS.gameReviewRemovePrefix}${start + i}`)
+      .setEmoji('🗑️')
+      .setLabel(label)
       .setStyle(ButtonStyle.Danger);
   });
 
@@ -195,16 +272,25 @@ function buildGameReviewComponents(guildId, CUSTOM_IDS) {
     }
   }
 
-  rows.push(new ActionRowBuilder().addComponents(
+  const navButtons = [
     new ButtonBuilder()
       .setCustomId(CUSTOM_IDS.gameReviewAdd)
       .setLabel('➕ Ajouter un jeu')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId(CUSTOM_IDS.gameReviewContinue)
-      .setLabel('Continuer ➡️')
-      .setStyle(ButtonStyle.Primary)
-  ));
+      .setStyle(ButtonStyle.Secondary)
+  ];
+  if (page > 0) {
+    navButtons.unshift(new ButtonBuilder()
+      .setCustomId(CUSTOM_IDS.gameReviewPrev)
+      .setLabel('◀ Précédent')
+      .setStyle(ButtonStyle.Secondary));
+  }
+  const isLast = page >= totalPages - 1;
+  navButtons.push(new ButtonBuilder()
+    .setCustomId(CUSTOM_IDS.gameReviewContinue)
+    .setLabel(isLast ? 'Continuer ➡️' : 'Suite ➡️')
+    .setStyle(ButtonStyle.Primary));
+
+  rows.push(new ActionRowBuilder().addComponents(navButtons));
 
   return rows;
 }
@@ -253,11 +339,11 @@ function buildGameLinkContent(guildId) {
   return lines.join('\n');
 }
 
-function buildGameLinkComponents(guildId, guild, CUSTOM_IDS, buildNavRow) {
+function buildGameLinkComponents(guildId, guild, buildNavRow, step = 6) {
   const games = getDetectedGames(guildId);
   const cursor = getGameLinkCursor(guildId);
   const game = games[cursor];
-  if (!game) return [buildNavRow(guildId, 3)];
+  if (!game) return buildNavRow ? [buildNavRow(guildId, step)] : [];
 
   const activeType = getGameLinkActiveType(guildId);
   const rows = [];
@@ -329,6 +415,9 @@ module.exports = {
   setDetectedGames,
   getGameLinkCursor,
   setGameLinkCursor,
+  getGameReviewPage,
+  setGameReviewPage,
+  MAX_REVIEW_GAMES,
   buildGameDetectContent,
   buildGameDetectComponents,
   buildGameReviewContent,

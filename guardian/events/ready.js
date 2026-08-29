@@ -13,6 +13,7 @@ const { upsertStatusEmbed } = require('../modules/config/botPanel');
 const { getGuildSetting, setGuildSetting } = require('../modules/config/settings');
 const { setConfig, getConfig } = require('../database/db');
 const { runChannelMigrations } = require('../modules/migrations/channelMigrations');
+const { runVersionedMigrations } = require('../modules/migrations/versionedMigrations');
 const { restoreConfigFromBackup, saveConfigBackup } = require('../modules/config/configBackup');
 const { getInstallContext } = require('../modules/initialisation/detectInstallContext');
 const { CATEGORIES, CHANNELS } = require('../config');
@@ -20,6 +21,7 @@ const { findCategoryByName, findGuildTextChannelByName } = require('../modules/u
 const logger = require('../modules/logs/logger');
 const { version } = require('../package.json');
 const { notifyBotAdminUpdate, getBotAdminId, bootstrapAdminIfNeeded } = require('../modules/admin/botUpdater');
+const { sendAdminDmMessage } = require('../modules/admin/adminPanel');
 const { notifyAllGuildsNewOptions } = require('../modules/migrations/newOptionsNotifier');
 const { initAlerts, alertGuildJoin, alertGuildLeave } = require('../modules/admin/adminAlerts');
 const { openOrRefreshPanel, pushPanelToBottom } = require('../modules/admin/adminPanel');
@@ -78,9 +80,16 @@ module.exports = {
                 `> Pour finaliser l'installation, reprends la configuration là où tu t'es arrêté.`,
                 setupLink ? `\n🔗 **[Reprendre la configuration](${setupLink})**` : `\n> Rends-toi dans le channel **#${CHANNELS.setup}** sur ton serveur.`
               ].join('\n');
-              await ownerUser.send(msg).catch(() =>
-                logger.warn(`Ready: could not send setup_incomplete DM to ${ownerId} for guild ${guild.id}`)
-              );
+              const isAdmin = ownerId === getBotAdminId();
+              if (isAdmin) {
+                await sendAdminDmMessage(client, { content: msg }).catch(() =>
+                  logger.warn(`Ready: could not send setup_incomplete admin DM to ${ownerId} for guild ${guild.id}`)
+                );
+              } else {
+                await ownerUser.send(msg).catch(() =>
+                  logger.warn(`Ready: could not send setup_incomplete DM to ${ownerId} for guild ${guild.id}`)
+                );
+              }
               logger.info(`Guild ${guild.id}: setup_incomplete DM sent to ${ownerId}`);
             }
           }
@@ -92,6 +101,7 @@ module.exports = {
         await seedGuildMessages(guild).catch(() => undefined);
 
         await runChannelMigrations(guild);
+        await runVersionedMigrations(guild).catch((err) => logger.error(`Failed versioned migrations for guild ${guild.id}`, err));
 
         const lastVersion = getGuildSetting(guild.id, 'bot', 'last_version', null);
         if (lastVersion !== version) {
@@ -113,7 +123,6 @@ module.exports = {
     if (isUpdate) {
       setConfig(GLOBAL, 'bot', 'last_version', version);
       await notifyBotAdminUpdate(client, lastGlobalVersion, version).catch(() => {});
-      await pushPanelToBottom(client).catch(() => {});
     } else if (!lastGlobalVersion) {
       setConfig(GLOBAL, 'bot', 'last_version', version);
     }
