@@ -1,6 +1,6 @@
 # Roadmap Guardian_Discord_Bot
 
-_Mise à jour : 2026-07-15_
+_Mise à jour : 2026-08-29_
 
 ## Vue d’ensemble des issues
 - Issues **fermées** : **44**
@@ -13,7 +13,7 @@ Statut:
 - ✅ Structure Node.js et dépendances de base
 - ✅ Initialisation Discord client + loader events/commands
 - ✅ Configuration multi-instance `.env`
-- ⚠️ `logger.js` est référencé mais non présent dans l’arborescence actuelle
+- ✅ `logger.js` structuré présent dans `guardian/modules/logs/logger.js`
 
 ## Phase 2 — Onboarding & setup (partiellement terminé)
 Basé sur Epic E/G.
@@ -69,9 +69,20 @@ Statut:
 - ✅ Hetzner deployment scripts
 - ✅ Multi-env support (`--env=dev|beta|prod`)
 
+## Phase 9 — Stabilisation du setup et migrations (v0.30.x)
+
+Basé sur les Epic de setup robustifié et migrations versionnées.
+
+Statut:
+- ✅ Pagination automatique des menus > 25 éléments (`paginatedSelect`)
+- ✅ Migrations DB/Discord versionnées automatiques + refresh des panels
+- ✅ Config-games refresh et topics i18n sur tous les channels
+- ✅ Setup plus robuste (messages normaux, auto-position, curseur d'étapes)
+- ✅ Suggestions et vocaux temporaires améliorés
+
 ## Backlog prioritaire (prochaines étapes recommandées)
-1. Corriger/ajouter le module logger manquant.
-2. Fermer Epic F (génération complète de la structure Discord).
-3. Finaliser la config Membre+ (issue #67).
-4. Finaliser `/historique`, slow mode et comportement owner (#55, #59, #62).
-5. Ajouter les tests unitaires Epic Q (#71/#72/#73).
+1. Fermer Epic F (génération complète de la structure Discord).
+2. Finaliser la config Membre+ (issue #67).
+3. Finaliser `/historique`, slow mode et comportement owner (#55, #59, #62).
+4. Ajouter les tests unitaires Epic Q (#71/#72/#73).
+5. Finaliser le module Rich Presence optionnel (#74) si toujours pertinent.
