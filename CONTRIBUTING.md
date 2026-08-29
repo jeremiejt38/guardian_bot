@@ -4,8 +4,9 @@ Thank you for your interest in contributing to Guardian!
 
 ## How contributions work
 
-Guardian is an **open-core** project. The source code is developed in a private
-repository. This public repository (`Guardian_Discord_Bot_Free`) contains the
+Guardian is an **open-core** project. The source code is developed in the private
+repository [`jeremiejt38/guardian_bot`](https://github.com/jeremiejt38/guardian_bot).
+This public repository (`Guardian_Discord_Bot_Free`) contains the
 free version of the bot and is the place where you can:
 
 - **Report bugs** via [Issues](../../issues)
