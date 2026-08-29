@@ -7,7 +7,7 @@
 
 'use strict';
 
-const GITHUB_REPO = 'jeremiejt38/Guardian_Discord_Bot';
+const GITHUB_REPO = 'jeremiejt38/guardian_bot';
 const GITHUB_BASE = `https://github.com/${GITHUB_REPO}`;
 
 // ── Tagline ──────────────────────────────────────────────────────────────────

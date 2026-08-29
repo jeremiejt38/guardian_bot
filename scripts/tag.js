@@ -178,7 +178,7 @@ async function main() {
     '',
     changelog || '*No changes documented.*',
     '',
-    `**Full diff**: https://github.com/jeremiejt38/Guardian_Discord_Bot/compare/${lastTag ?? 'HEAD'}...${newTag}`
+    `**Full diff**: https://github.com/jeremiejt38/guardian_bot/compare/${lastTag ?? 'HEAD'}...${newTag}`
   ].join('\n');
 
   console.log('\n── Tag notes preview ───────────────────────────────────');

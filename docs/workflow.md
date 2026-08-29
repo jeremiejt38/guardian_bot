@@ -8,7 +8,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        REPO PRIVÉ (jeremiejt38/Guardian_Discord_Bot)        │
+│                        REPO PRIVÉ (jeremiejt38/guardian_bot)        │
 │                                                                             │
 │   dev ──────────────────────────────────────────────────────────────────►  │
 │    │   feature stable + testée en local                                     │
@@ -27,7 +27,7 @@
 │              │                                                              │
 │              ├──► ZIP guardian-free-vX.Y.Z.zip                             │
 │              │                                                              │
-│              └──► REPO PUBLIC (jeremiejt38/Guardian_Discord_Bot_Free)      │
+│              └──► REPO PUBLIC (jeremiejt38/guardian_bot_Free)      │
 │                   ├─ git push code source strippé (main)                   │
 │                   ├─ git tag vX.Y.Z                                        │
 │                   ├─ GitHub Release + zip en asset                         │
@@ -70,7 +70,7 @@ git checkout beta
 git merge dev
 git push origin beta
 # → déployer Hetzner depuis beta :
-#   ssh hetzner "cd Guardian_Discord_Bot && git pull origin beta && pm2 restart guardian"
+#   ssh hetzner "cd guardian_bot && git pull origin beta && pm2 restart guardian"
 ```
 
 Les abonnés premium sur le serveur Hetzner voient les nouvelles features en avant-première.
@@ -133,7 +133,7 @@ Quand un bug est reporté sur `Guardian_Discord_Bot_Free` :
 3. Commit avec référence cross-repo :
    git commit -m "fix: description
 
-   Fixes jeremiejt38/Guardian_Discord_Bot_Free#N"
+   Fixes jeremiejt38/guardian_bot_Free#N"
 4. Flow normal dev → beta → main → release
 5. GitHub ferme automatiquement l'issue #N sur le repo free
 ```
@@ -149,7 +149,7 @@ Quand un bug est reporté sur `Guardian_Discord_Bot_Free` :
    git commit -m "fix: description
 
    Co-authored-by: PseudoContrib <email@example.com>
-   Closes jeremiejt38/Guardian_Discord_Bot_Free#N"
+   Closes jeremiejt38/guardian_bot_Free#N"
 4. Tu merges la PR sur le repo free (Option A — crédite le contributeur)
 5. Flow normal dev → beta → main → release
 ```

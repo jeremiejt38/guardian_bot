@@ -36,9 +36,9 @@ if (fs.existsSync(envPath)) {
 }
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_REPO = 'jeremiejt38/Guardian_Discord_Bot';
+const GITHUB_REPO = 'jeremiejt38/guardian_bot';
 const GITHUB_FREE_TOKEN = process.env.GITHUB_FREE_RELEASE_TOKEN;
-const GITHUB_FREE_REPO = process.env.GITHUB_FREE_REPO ?? 'jeremiejt38/Guardian_Discord_Bot_Free';
+const GITHUB_FREE_REPO = process.env.GITHUB_FREE_REPO ?? 'jeremiejt38/guardian_bot_Free';
 const PKG_PATH = path.resolve(__dirname, '../guardian/package.json');
 const README_PATH = path.resolve(__dirname, '../README.md');
 const FREE_BUILD_SCRIPT = path.resolve(__dirname, 'build-free.js');

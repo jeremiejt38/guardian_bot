@@ -45,8 +45,8 @@ su - guardian
 ### 5. Cloner le repo
 
 ```bash
-git clone https://github.com/jeremiejt38/Guardian_Discord_Bot.git
-cd Guardian_Discord_Bot/guardian
+git clone https://github.com/jeremiejt38/guardian_bot.git
+cd guardian_bot/guardian
 npm install
 ```
 
@@ -85,7 +85,7 @@ pm2 startup   # copier-coller la commande affichée
 ## Mise à jour (mise à jour manuelle)
 
 ```bash
-cd Guardian_Discord_Bot
+cd guardian_bot
 git pull origin main   # ou beta selon l'environnement
 cd guardian
 npm install

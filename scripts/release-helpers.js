@@ -10,8 +10,8 @@ const path = require('path');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PKG_PATH = path.resolve(REPO_ROOT, 'guardian/package.json');
 const README_PATH = path.resolve(REPO_ROOT, 'README.md');
-const GITHUB_REPO = 'jeremiejt38/Guardian_Discord_Bot';
-const GITHUB_FREE_REPO = process.env.GITHUB_FREE_REPO ?? 'jeremiejt38/Guardian_Discord_Bot_Free';
+const GITHUB_REPO = 'jeremiejt38/guardian_bot';
+const GITHUB_FREE_REPO = process.env.GITHUB_FREE_REPO ?? 'jeremiejt38/guardian_bot_Free';
 
 function run(cmd, opts = {}) {
   const result = execSync(cmd, { encoding: 'utf8', stdio: opts.silent ? 'pipe' : 'inherit', ...opts });

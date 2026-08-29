@@ -70,5 +70,5 @@ The script reads the current version from `guardian/package.json` (which must al
 
 ## After release
 
-- The public free release appears at `https://github.com/jeremiejt38/Guardian_Discord_Bot_Free/releases`
-- The premium repo release remains on `https://github.com/jeremiejt38/Guardian_Discord_Bot/releases` (created during `/tag` if configured)
+- The public free release appears at `https://github.com/jeremiejt38/guardian_bot_Free/releases`
+- The premium repo release remains on `https://github.com/jeremiejt38/guardian_bot/releases` (created during `/tag` if configured)

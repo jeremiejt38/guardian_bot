@@ -20,8 +20,8 @@ git --version
 ## Cloner et installer
 
 ```bash
-git clone https://github.com/jeremiejt38/Guardian_Discord_Bot.git
-cd Guardian_Discord_Bot/guardian
+git clone https://github.com/jeremiejt38/guardian_bot.git
+cd guardian_bot/guardian
 npm install
 ```
 
