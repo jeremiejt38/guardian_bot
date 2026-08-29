@@ -26,6 +26,11 @@ async function handleSetupInteraction(interaction) {
   if (!guildId) return false;
   if (!interaction.customId || !interaction.customId.startsWith('setup:')) return false;
 
+  if (getGuildSetting(guildId, 'setup', 'finalizing', false)) {
+    await interaction.deferUpdate().catch(() => {});
+    return true;
+  }
+
   const setupOwnerId = getGuildSetting(guildId, 'setup', 'owner_id', null);
   if (setupOwnerId && interaction.user.id !== setupOwnerId) {
     if (interaction.isRepliable()) await replyEphemeral(interaction, t('setup.forbiddenNotOwner', {}, { guildId }));

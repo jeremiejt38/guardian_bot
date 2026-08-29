@@ -404,6 +404,7 @@
     "selectPlaceholder": "Choisir un jeu (ou Chat)",
     "invalidGame": "Jeu introuvable.",
     "created": "✅ Ton salon vocal {{channel}} a été créé !",
+    "joinPrompt": "Ton salon vocal {{channel}} est prêt. Rejoins-le pour commencer.",
     "chatOption": "💬 Chat — salon sans jeu"
   },
   "meta": {

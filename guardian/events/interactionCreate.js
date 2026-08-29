@@ -10,7 +10,7 @@ const { handleRolesInteraction } = require('../modules/config/rolesPanel');
 const { handleBotInteraction } = require('../modules/config/botPanel');
 const { handleGuardianInteraction } = require('../modules/config/guardianPanel');
 const { handleHistoriquePagination } = require('../commands/historique');
-const { handleOpenGameList, handleGameListSelection } = require('../modules/games/gameList');
+const { handleOpenGameList, handleGameListSelection, handleGameListPage } = require('../modules/games/gameList');
 const { handleGamesInteraction } = require('../modules/games/optInInteraction');
 const { handleServerGamesInteraction } = require('../modules/games/serverGamesManager');
 const { handleGameRequestInteraction } = require('../modules/games/gameRequests');
@@ -37,9 +37,13 @@ const {
   handleSetupLanguageSelection,
   SETUP_CLEAN_SERVER_BUTTON_ID,
   SETUP_CLEAN_MODAL_ID,
+  SETUP_CLEAN_VOCALS_BUTTON_ID,
+  SETUP_CLEAN_ROLES_BUTTON_ID,
   SETUP_FRESH_START_BUTTON_ID,
   handleSetupCleanServerButton,
-  handleSetupCleanModal
+  handleSetupCleanModal,
+  handleSetupCleanVocalsButton,
+  handleSetupCleanRolesButton
 } = require('../modules/initialisation/setup');
 const { handleSetupInteraction, startWizardInChannel } = require('../modules/initialisation/setupFlow');
 const { handleAddServerButton, handleServerModalSubmit, memberCanManageServers } = require('../modules/servers/interaction');
@@ -273,6 +277,11 @@ module.exports = {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId.startsWith('gamelist:select:page:')) {
+      await handleGameListPage(interaction);
+      return;
+    }
+
     if (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isModalSubmit()) {
       if (
         interaction.customId === PROMOTION_IDS.request ||
@@ -299,7 +308,7 @@ module.exports = {
     }
 
     if (interaction.isButton() || interaction.isStringSelectMenu()) {
-      if (interaction.customId === 'games:manage' || interaction.customId === 'games:select') {
+      if (interaction.customId === 'games:manage' || interaction.customId.startsWith('games:select')) {
         const handled = await handleGamesInteraction(interaction);
         if (handled) return;
       }
@@ -310,7 +319,7 @@ module.exports = {
         interaction.customId === 'servergames:add' ||
         interaction.customId === 'servergames:remove' ||
         interaction.customId === 'servergames:add:modal' ||
-        interaction.customId === 'servergames:remove:select'
+        interaction.customId.startsWith('servergames:remove:select')
       ) {
         const handled = await handleServerGamesInteraction(interaction);
         if (handled) return;
@@ -355,6 +364,16 @@ module.exports = {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId === SETUP_CLEAN_VOCALS_BUTTON_ID) {
+      await handleSetupCleanVocalsButton(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId === SETUP_CLEAN_ROLES_BUTTON_ID) {
+      await handleSetupCleanRolesButton(interaction);
+      return;
+    }
+
     if (interaction.isModalSubmit() && interaction.customId === SETUP_CLEAN_MODAL_ID) {
       await handleSetupCleanModal(interaction);
       return;
@@ -370,7 +389,7 @@ module.exports = {
       return;
     }
 
-    if (interaction.isStringSelectMenu() && interaction.customId === 'gamelist:select') {
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('gamelist:select:')) {
       await handleGameListSelection(interaction);
       return;
     }

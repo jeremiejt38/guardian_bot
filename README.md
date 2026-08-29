@@ -4,7 +4,7 @@
 
 **All-in-one Discord community bot for gaming servers**
 
-[![Version](https://img.shields.io/badge/version-v0.29.0-blue?style=flat-square)](https://github.com/jeremiejt38/Guardian_Discord_Bot/releases)
+[![Version](https://img.shields.io/badge/version-v0.30.8-blue?style=flat-square)](https://github.com/jeremiejt38/Guardian_Discord_Bot/releases)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-green?style=flat-square)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE)
 
@@ -161,6 +161,8 @@ npm start
 
 | Version | Description |
 |---------|-------------|
+| **v0.30** | **select**: routage interactions paginees gamelist · **select**: pagination automatique pour tous les menus > 25 elements |
+| | [Full diff](https://github.com/jeremiejt38/Guardian_Discord_Bot/compare/v0.29.25...v0.30.0) |
 | **v0.29** | **Deployment & Hetzner updates** — Hetzner deployment scripts with `git pull --ff-only`, Guides category placed below Configuration category |
 | | [012d043](https://github.com/jeremiejt38/Guardian_Discord_Bot/commit/012d043) |
 | **v0.28** | **Migration & premium locking** — Guild data export/import for free ↔ premium migration, stable CommonJS SQLite export/import, `/premium` info command, `/license` locked in free build |

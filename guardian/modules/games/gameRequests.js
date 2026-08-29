@@ -16,6 +16,7 @@ const { memberHasAnyRole } = require('../utils/roles');
 const { searchGames, generateNonSteamId, isNonSteamId } = require('./steamGamesList');
 const { searchRawgGame, getRawgApiKey } = require('./rawgApi');
 const { insertGame } = require('./serverGamesManager');
+const { buildGameChannelTopics } = require('./gameList');
 const logger = require('../logs/logger');
 
 const IDS = Object.freeze({
@@ -120,10 +121,12 @@ async function createGameChannelBetweenCategories(guild, gameName, gameRoleId) {
     permissionOverwrites: categoryPerms
   });
 
+  const topics = buildGameChannelTopics(gameName);
   const textChannel = await guild.channels.create({
     name: normalized,
     type: ChannelType.GuildText,
-    parent: category.id
+    parent: category.id,
+    topic: topics.text
   });
 
   if (modCat && configCat) {

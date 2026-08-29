@@ -75,4 +75,41 @@ async function seedGuildMessages(guild) {
   }
 }
 
-module.exports = { seedGuildMessages };
+async function refreshGuildPanels(guild) {
+  const channelNames = [
+    CHANNEL_NAMES.welcome,
+    CHANNEL_NAMES.changelogs,
+    CHANNEL_NAMES.suggestions,
+    CHANNEL_NAMES.voiceCreate,
+    CHANNEL_NAMES.autoModeration,
+    CHANNEL_NAMES.behavior,
+    CHANNEL_NAMES.validation,
+    CHANNEL_NAMES.membres,
+    CHANNEL_NAMES.channelsConfig,
+    CHANNEL_NAMES.vocauxConfig,
+    CHANNEL_NAMES.jeux,
+    CHANNEL_NAMES.serveurs,
+    CHANNEL_NAMES.roles,
+    CHANNEL_NAMES.guardianConfig,
+    CHANNEL_NAMES.guardian,
+  ];
+
+  for (const name of channelNames) {
+    const channel = findGuildTextChannelByName(guild, name);
+    if (!channel) continue;
+    try {
+      const recent = await channel.messages.fetch({ limit: 10 }).catch(() => null);
+      if (!recent) continue;
+      const botMessages = [...recent.values()].filter((m) => m.author.id === guild.client.user.id);
+      for (const msg of botMessages) {
+        await msg.delete().catch(() => {});
+      }
+    } catch (err) {
+      logger.warn(`refreshGuildPanels: failed to clean messages in #${name}`, { guildId: guild.id, error: err.message });
+    }
+  }
+
+  await seedGuildMessages(guild);
+}
+
+module.exports = { seedGuildMessages, refreshGuildPanels };

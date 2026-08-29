@@ -67,7 +67,7 @@ async function _handleStep8(guildId, interaction) {
     if (channelIds.length > 0 && interaction.guild) {
       const res = await addOnboardingDefaultChannels(interaction.guild, channelIds);
       await sendSetupMessage(interaction, res.ok
-        ? `✅ ${channelIds.length} channel(s) ajouté(s) à l\'onboarding Discord.`
+        ? `✅ ${res.message || `${channelIds.length} channel(s) ajouté(s).`}`
         : `⚠️ Échec onboarding : ${res.error}`);
     } else {
       await sendSetupMessage(interaction, '⚠️ Aucun channel configuré à ajouter à l\'onboarding.');

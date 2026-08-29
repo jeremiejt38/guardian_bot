@@ -1,4 +1,4 @@
-const { pushPanelToBottom, getNotifPref } = require('./adminPanel');
+const { sendAdminDmMessage, getNotifPref } = require('./adminPanel');
 const { getBotAdminId } = require('./botUpdater');
 const logger = require('../logs/logger');
 
@@ -13,12 +13,7 @@ async function sendAdminAlert(type, content) {
   const adminId = getBotAdminId();
   if (!adminId || !_client) return;
   try {
-    const user = await _client.users.fetch(adminId).catch(() => null);
-    if (!user) return;
-    const dm = await user.createDM().catch(() => null);
-    if (!dm) return;
-    await dm.send(content);
-    await pushPanelToBottom(_client);
+    await sendAdminDmMessage(_client, typeof content === 'string' ? { content } : content);
   } catch (err) {
     logger.error('adminAlerts: sendAdminAlert error', err);
   }

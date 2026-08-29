@@ -31,21 +31,58 @@ function explainStepOneValidation(guildId, validation, gradeLabelFn) {
 async function advanceToStep2AfterSecurity(interaction, guildId, buildStepPayloadFn) {
   const nextStep = 2;
   setGuildSetting(guildId, 'setup', 'step', nextStep);
-  await interaction.message.delete().catch(() => {});
+  const payload = await buildStepPayloadFn(guildId, interaction.guild, nextStep);
+
+  // Nettoyer les anciens messages wizard pour éviter les doublons
   const wizardChannel = interaction.channel;
+  if (wizardChannel) {
+    try {
+      const msgs = await wizardChannel.messages.fetch({ limit: 20 });
+      const botId = interaction.client?.user?.id;
+      const ownMessageId = interaction.message?.id;
+      for (const [, m] of msgs) {
+        if (m.id === ownMessageId) continue;
+        if (m.components?.length > 0 && (!botId || m.author?.id === botId)) {
+          await m.delete().catch(() => {});
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Résoudre l'interaction Discord proprement (sauf pour les interactions factices sans méthodes)
+  if (typeof interaction.editReply === 'function') {
+    try {
+      await interaction.editReply(payload);
+      return;
+    } catch (err) {
+      logger.warn(`[security] editReply failed: ${err?.message}`);
+    }
+  }
+  if (typeof interaction.update === 'function') {
+    try {
+      await interaction.update(payload);
+      return;
+    } catch (err) {
+      logger.warn(`[security] update failed: ${err?.message}`);
+    }
+  }
+
+  // Fallback pour interactions factices : supprimer le message original puis éditer/envoyer le wizard
+  await interaction.message?.delete?.().catch(() => {});
   if (!wizardChannel) return;
   const msgs = await wizardChannel.messages.fetch({ limit: 20 }).catch(() => null);
-  if (!msgs) return;
-  const botId = interaction.client.user.id;
-  const wizardMsg = msgs.find((m) => m.author.id === botId && m.components.length > 0)
-    ?? msgs.find((m) => m.author.id === botId);
+  if (!msgs) { await wizardChannel.send(payload).catch(() => {}); return; }
+  const botId = interaction.client?.user?.id;
+  const wizardMsg = botId
+    ? (msgs.find((m) => m.author.id === botId && m.components.length > 0) ?? msgs.find((m) => m.author.id === botId))
+    : msgs.find((m) => m.components.length > 0);
   if (wizardMsg) {
-    await wizardMsg.edit(buildStepPayloadFn(guildId, interaction.guild, nextStep)).catch((err) => {
+    await wizardMsg.edit(payload).catch(async (err) => {
       logger.warn(`[security] failed to edit wizardMsg: ${err?.message}`);
+      await wizardChannel.send(payload).catch(() => {});
     });
   } else {
-    logger.warn('[security] no wizardMsg found, sending new');
-    await wizardChannel.send(buildStepPayloadFn(guildId, interaction.guild, nextStep)).catch(() => {});
+    await wizardChannel.send(payload).catch(() => {});
   }
 }
 

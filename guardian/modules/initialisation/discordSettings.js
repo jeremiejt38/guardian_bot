@@ -331,14 +331,47 @@ async function addOnboardingDefaultChannels(guild, channelIds) {
     const current = await guild.fetchOnboarding().catch(() => null);
     if (!current) return { ok: false, error: 'Onboarding non disponible (serveur non Community ?)' };
 
-    const existing = current.defaultChannels?.map((c) => c.id) ?? [];
-    const merged = [...new Set([...existing, ...channelIds])];
+    const existing = (current.defaultChannels || []).filter(Boolean).map((c) => c.id);
+    const validIds = [];
+    const skipped = [];
+    const everyone = guild.roles.everyone;
+    if (!everyone) {
+      logger.warn(`discordSettings: everyone role missing for guild ${guild.id}`);
+      return { ok: false, error: 'Rôle everyone introuvable' };
+    }
 
-    await guild.client.rest.patch(`/guilds/${guild.id}/onboarding`, {
+    for (const id of [...new Set(channelIds)]) {
+      const channel = guild.channels.cache.get(id);
+      if (!channel) {
+        skipped.push({ id, reason: 'introuvable' });
+        continue;
+      }
+
+      const perms = channel.permissionsFor(everyone);
+      if (perms?.has(PermissionFlagsBits.ViewChannel)) {
+        validIds.push(id);
+        continue;
+      }
+
+      try {
+        await channel.permissionOverwrites.create(everyone, { ViewChannel: true });
+        validIds.push(id);
+      } catch (err) {
+        logger.warn(`discordSettings: cannot grant ViewChannel to @everyone for onboarding channel ${id}: ${err.message}`);
+        skipped.push({ id, reason: 'pas d\'acces @everyone' });
+      }
+    }
+
+    const merged = [...new Set([...existing, ...validIds])];
+
+    await guild.client.rest.put(`/guilds/${guild.id}/onboarding`, {
       body: { default_channel_ids: merged }
     });
     logger.info(`discordSettings: onboarding default_channel_ids updated for guild ${guild.id}`);
-    return { ok: true };
+    const message = skipped.length > 0
+      ? `${validIds.length} ajoute(s), ${skipped.length} ignore(s) (besoin d'acces @everyone)`
+      : `${validIds.length} channel(s) ajoute(s) a l'onboarding Discord.`;
+    return { ok: true, skipped, message };
   } catch (err) {
     logger.warn(`discordSettings.addOnboardingDefaultChannels failed for guild ${guild.id}: ${err.message}`);
     return { ok: false, error: err.message };

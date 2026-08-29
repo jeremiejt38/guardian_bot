@@ -42,6 +42,32 @@ const {
 } = require('../discordSettings');
 // @premium-end
 
+function _searchChannelOptions(guild, slot, query) {
+  const isVoice = slot.key.startsWith('voice');
+  const allChannels = Array.from(guild.channels.cache.values())
+    .filter((c) => isVoice ? (c.isVoiceBased && c.isVoiceBased()) : (c.isTextBased && c.isTextBased() && !c.isVoiceBased()));
+  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  const scored = allChannels.map((c) => {
+    const n = c.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    let score = 0;
+    if (n === q) score = 100;
+    else if (n.startsWith(q)) score = 80;
+    else if (n.includes(q)) score = 60;
+    else if (q && n.split(/[-_\s]/).some((p) => p.startsWith(q))) score = 40;
+    return { c, score };
+  });
+  return scored
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score || a.c.name.localeCompare(b.c.name))
+    .map(({ c }) => ({ label: `${c.name}`.slice(0, 25), value: c.id, description: `#${c.name}`.slice(0, 50) }));
+}
+
+const channelSearchCache = new Map();
+
+function _searchCacheKey(guildId, userId, slotKey) {
+  return `${guildId}:${userId}:${slotKey}`;
+}
+
 async function _handleStep3(guildId, interaction) {
   if (interaction.customId.startsWith(`${CUSTOM_IDS.channelSelectPrefix}:`)) {
     const slotKey = interaction.customId.split(':').pop();
@@ -76,6 +102,17 @@ async function _handleStep3(guildId, interaction) {
       else { setGuildSetting(guildId, 'setup', 'step', 4); await renderStep(interaction, 4); }
       return true;
     }
+    if (action === 'delete-afk' && slot?.key === 'voiceAfk') {
+      const currentId = getGuildSetting(guildId, slot.settingSection, slot.settingKey, null);
+      if (currentId && currentId !== 'guardian:create') {
+        const ch = interaction.guild?.channels?.cache?.get(currentId);
+        if (ch?.deletable) await ch.delete('Désactivation AFK via setup').catch(() => {});
+      }
+      setGuildSetting(guildId, slot.settingSection, slot.settingKey, null);
+      setGuildSetting(guildId, 'channels', 'afk_enabled', false);
+      setChannelCursor(guildId, Math.min(cursor + 1, activeSlots.length - 1));
+      await renderStep(interaction, 3); return true;
+    }
     if (action === 'next') {
       if (typeof interaction.guild?.channels?.fetch === 'function') await interaction.guild.channels.fetch().catch(() => {});
       const currentSlot = activeSlots[cursor];
@@ -100,6 +137,90 @@ async function _handleStep3(guildId, interaction) {
       else { setChannelCursor(guildId, cursor + 1); await renderStep(interaction, 3); }
       return true;
     }
+  }
+
+  if (interaction.isButton() && interaction.customId.startsWith(`${CUSTOM_IDS.channelSearch}:`) && !interaction.customId.startsWith(`${CUSTOM_IDS.channelSearchSelect}:`)) {
+    const slotKey = interaction.customId.split(':').pop();
+    const slot = CHANNEL_SLOTS.find((s) => s.key === slotKey);
+    if (!slot) { await interaction.deferUpdate().catch(() => {}); return true; }
+    const modal = new ModalBuilder()
+      .setCustomId(`${CUSTOM_IDS.channelSearchModal}:${slotKey}`)
+      .setTitle('Rechercher un salon')
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('query')
+            .setLabel('Nom du salon')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+            .setMaxLength(64)
+            .setPlaceholder('Ex: général, vocal...')
+        )
+      );
+    await interaction.showModal(modal).catch((err) => logger.warn('showModal channelSearch failed', { error: err?.message }));
+    return true;
+  }
+
+  if (interaction.isModalSubmit() && interaction.customId.startsWith(`${CUSTOM_IDS.channelSearchModal}:`)) {
+    const slotKey = interaction.customId.split(':').pop();
+    const slot = CHANNEL_SLOTS.find((s) => s.key === slotKey);
+    if (!slot) { await interaction.deferUpdate().catch(() => {}); return true; }
+    const query = interaction.fields.getTextInputValue('query').trim();
+    if (!query) { await replyEphemeral(interaction, 'Recherche vide.'); return true; }
+    const results = _searchChannelOptions(interaction.guild, slot, query);
+    if (results.length === 0) {
+      await replyEphemeral(interaction, `Aucun salon trouvé pour **${query}**.`);
+      return true;
+    }
+    if (results.length === 1) {
+      setGuildSetting(guildId, slot.settingSection, slot.settingKey, results[0].value);
+      await interaction.deferUpdate().catch(() => {});
+      await renderStep(interaction, 3);
+      return true;
+    }
+
+    const { buildPaginatedSelect } = require('../../utils/paginatedSelect');
+    const baseCustomId = `${CUSTOM_IDS.channelSearchSelect}:${slotKey}`;
+    channelSearchCache.set(_searchCacheKey(guildId, interaction.user.id, slotKey), results);
+    const { rows } = buildPaginatedSelect(
+      results,
+      baseCustomId,
+      `Résultats pour "${query.slice(0, 80)}"`,
+      0,
+      { minValues: 1, maxValues: 1 }
+    );
+    await interaction.reply({ content: `**${results.length}** salon(s) trouvé(s), choisis :`, components: rows, ephemeral: true }).catch(() => {});
+    return true;
+  }
+
+  if (interaction.isButton() && interaction.customId.startsWith(`${CUSTOM_IDS.channelSearchSelect}:`) && interaction.customId.includes(':page:')) {
+    const parts = interaction.customId.split(':');
+    const slotKey = parts[parts.length - 3];
+    const targetPage = Number(parts[parts.length - 1]);
+    const slot = CHANNEL_SLOTS.find((s) => s.key === slotKey);
+    if (!slot || Number.isNaN(targetPage)) { await interaction.deferUpdate().catch(() => {}); return true; }
+    const results = channelSearchCache.get(_searchCacheKey(guildId, interaction.user.id, slotKey));
+    if (!results || results.length === 0) {
+      await interaction.update({ content: 'La recherche a expiré, recommence.', components: [] }).catch(() => {});
+      return true;
+    }
+    const { buildPaginatedSelect } = require('../../utils/paginatedSelect');
+    const baseCustomId = `${CUSTOM_IDS.channelSearchSelect}:${slotKey}`;
+    const { rows } = buildPaginatedSelect(results, baseCustomId, `Résultats`, targetPage, { minValues: 1, maxValues: 1 });
+    await interaction.update({ content: `**${results.length}** salon(s) trouvé(s), choisis :`, components: rows });
+    return true;
+  }
+
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith(`${CUSTOM_IDS.channelSearchSelect}:`)) {
+    const parts = interaction.customId.split(':');
+    const slotKey = parts[parts.length - 2];
+    const slot = CHANNEL_SLOTS.find((s) => s.key === slotKey);
+    if (slot && interaction.values?.[0] && interaction.values[0] !== 'none') {
+      setGuildSetting(guildId, slot.settingSection, slot.settingKey, interaction.values[0]);
+    }
+    await interaction.deferUpdate().catch(() => {});
+    await renderStep(interaction, 3);
+    return true;
   }
 
   return false;

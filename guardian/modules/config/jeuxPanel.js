@@ -5,10 +5,12 @@ const {
   StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  ChannelType
 } = require('discord.js');
 const { CHANNELS, GRADE_NAMES } = require('../../config');
 const { isNonSteamId } = require('../games/steamGamesList');
+const { provisionGameStructure } = require('../games/gameList');
 const { t } = require('../i18n');
 const { replyEphemeral } = require('../utils/interactions');
 const { findTextChannelByName } = require('../utils/channels');
@@ -16,6 +18,7 @@ const { getGuildSetting, setGuildSetting } = require('./settings');
 const { getGradeMappings } = require('../initialisation/gradeMapping');
 const { logConfigChange } = require('./configLogger');
 const { getDb } = require('../../database/db');
+const logger = require('../logs/logger');
 
 const CHANGELOGS_IDS = Object.freeze({
   toggleGlobal: 'changelogs:toggle:global',
@@ -40,6 +43,14 @@ const IDS = Object.freeze({
   toggleChangelog:'jeux:toggle:changelog:',
   toggleForum:   'jeux:toggle:forum:',
   confirmDelete: 'jeux:confirm:delete:',
+  linkChannels:  'jeux:link:channels:',
+  linkType:      'jeux:link:type:',
+  linkChannel:   'jeux:link:channel:',
+  linkDone:      'jeux:link:done:',
+  defaultText:   'jeux:default:text',
+  defaultGalerie:'jeux:default:galerie',
+  defaultChangelog:'jeux:default:changelog',
+  defaultForum:  'jeux:default:forum',
 });
 
 function hasManagerGrade(member, guildId) {
@@ -105,8 +116,21 @@ function buildChangelogsRow(guildId) {
   );
 }
 
+function buildGameDefaultsRow(guildId) {
+  const text = getGuildSetting(guildId, 'games', 'default_text_channel_enabled', false);
+  const galerie = getGuildSetting(guildId, 'games', 'default_galerie_enabled', false);
+  const changelog = getGuildSetting(guildId, 'games', 'default_changelog_enabled', false);
+  const forum = getGuildSetting(guildId, 'games', 'default_forum_enabled', false);
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(IDS.defaultText).setLabel(`💬 Texte: ${text ? 'ON' : 'OFF'}`).setStyle(text ? ButtonStyle.Success : ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(IDS.defaultGalerie).setLabel(`🖼️ Galerie: ${galerie ? 'ON' : 'OFF'}`).setStyle(galerie ? ButtonStyle.Success : ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(IDS.defaultChangelog).setLabel(`📢 Changelog: ${changelog ? 'ON' : 'OFF'}`).setStyle(changelog ? ButtonStyle.Success : ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(IDS.defaultForum).setLabel(`🗂️ Forum: ${forum ? 'ON' : 'OFF'}`).setStyle(forum ? ButtonStyle.Success : ButtonStyle.Secondary)
+  );
+}
+
 function buildComponents(guildId) {
-  return [buildMainPanelRow(guildId), buildChangelogsRow(guildId)];
+  return [buildMainPanelRow(guildId), buildChangelogsRow(guildId), buildGameDefaultsRow(guildId)];
 }
 
 async function seedJeuxPanel(guild) {
@@ -140,8 +164,95 @@ function buildGameEditRows(gameId, game) {
       new ButtonBuilder().setCustomId(`${IDS.toggleGalerie}${gameId}`).setLabel(`Galerie: ${game.galerie_enabled ? 'ON' : 'OFF'}`).setStyle(game.galerie_enabled ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId(`${IDS.toggleChangelog}${gameId}`).setLabel(`Changelog: ${game.changelog_enabled ? 'ON' : 'OFF'}`).setStyle(game.changelog_enabled ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId(`${IDS.toggleForum}${gameId}`).setLabel(`Forum: ${game.forum_enabled ? 'ON' : 'OFF'}`).setStyle(game.forum_enabled ? ButtonStyle.Success : ButtonStyle.Secondary)
+    ),
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`${IDS.linkChannels}${gameId}`).setLabel('🔗 Lier les channels').setStyle(ButtonStyle.Primary)
     )
   ];
+}
+
+const GAMELINK_TYPE_LABELS = Object.freeze({
+  text:      { icon: '💬', label: 'Chat texte' },
+  changelog: { icon: '📢', label: 'Annonces/Updates' },
+  galerie:   { icon: '🖼️', label: 'Galerie' }
+});
+const GAMELINK_LINKABLE_TYPES = ['text', 'galerie', 'changelog'];
+
+const gameLinkStates = new Map();
+
+function getLinkStateKey(guildId, userId, gameId) {
+  return `${guildId}:${userId}:${gameId}`;
+}
+
+function getUsedChannelIdsForType(guildId, excludeGameId, type) {
+  const db = getDb();
+  const column = type === 'text' ? 'channel_text_id' : type === 'galerie' ? 'channel_galerie_id' : 'channel_changelog_id';
+  const rows = db.prepare(`SELECT ${column} AS id FROM games WHERE guild_id = ? AND game_id != ? AND ${column} IS NOT NULL`).all(guildId, excludeGameId);
+  return new Set(rows.map((r) => r.id));
+}
+
+function buildLinkContent(game, state, guild) {
+  const lines = [
+    `## 🔗 Lier les channels — **${game.name}**`,
+    '',
+    'Associe les channels existants à ce jeu. Une fois lié, le channel sera déplacé dans la catégorie gérée par Guardian.',
+    ''
+  ];
+  for (const type of GAMELINK_LINKABLE_TYPES) {
+    const { icon, label } = GAMELINK_TYPE_LABELS[type];
+    const linkedId = state[type];
+    const linkedName = linkedId ? guild?.channels?.cache?.get(linkedId)?.name || linkedId : null;
+    const active = state.activeType === type ? ' ◀ en cours' : '';
+    lines.push(`> ${icon} **${label}** : ${linkedName ? `✅ \`#${linkedName}\`` : '❌ *non lié*'}${active}`);
+  }
+  return lines.join('\n');
+}
+
+function buildLinkComponents(interaction, game, state, page = 0) {
+  const guild = interaction.guild;
+  const rows = [];
+  const typeButtons = GAMELINK_LINKABLE_TYPES.map((type) => {
+    const { icon, label } = GAMELINK_TYPE_LABELS[type];
+    const linked = !!state[type];
+    const isActive = state.activeType === type;
+    return new ButtonBuilder()
+      .setCustomId(`${IDS.linkType}${game.game_id}:${type}`)
+      .setLabel(`${icon} ${label}${linked ? ' ✅' : ''}`)
+      .setStyle(isActive ? ButtonStyle.Primary : (linked ? ButtonStyle.Success : ButtonStyle.Secondary));
+  });
+  rows.push(new ActionRowBuilder().addComponents(...typeButtons));
+
+  if (state.activeType) {
+    const type = state.activeType;
+    const allowedTypes = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
+    const usedIds = getUsedChannelIdsForType(guild.id, game.game_id, type);
+    let candidates = Array.from(guild.channels.cache.values())
+      .filter((c) => allowedTypes.includes(c.type) && !usedIds.has(c.id))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => ({ label: c.name.slice(0, 25), value: c.id, description: `#${c.name}`.slice(0, 50) }));
+
+    if (state[type]) {
+      candidates.unshift({ label: '❌ Délier ce channel', value: 'unlink', description: 'Supprimer le lien actuel' });
+    }
+
+    if (candidates.length > 0) {
+      const { buildPaginatedSelect } = require('../utils/paginatedSelect');
+      const baseCustomId = `${IDS.linkChannel}${game.game_id}:${type}`;
+      const { rows: selectRows } = buildPaginatedSelect(
+        candidates,
+        baseCustomId,
+        `${GAMELINK_TYPE_LABELS[type].icon} Choisir le channel ${GAMELINK_TYPE_LABELS[type].label}`,
+        page,
+        { minValues: 1, maxValues: 1 }
+      );
+      rows.push(...selectRows);
+    }
+  }
+
+  rows.push(new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`${IDS.linkDone}${game.game_id}`).setLabel('✅ Terminer').setStyle(ButtonStyle.Success)
+  ));
+  return rows;
 }
 
 async function handleJeuxInteraction(interaction) {
@@ -173,32 +284,163 @@ async function handleJeuxInteraction(interaction) {
   if (interaction.isModalSubmit() && customId === IDS.addGameModal) {
     const name = interaction.fields.getTextInputValue('name').trim();
     const steamAppId = interaction.fields.getTextInputValue('steam_app_id').trim() || null;
-    getDb().prepare('INSERT INTO games (guild_id, name, steam_app_id, galerie_enabled, changelog_enabled, text_channel_enabled, forum_enabled) VALUES (?, ?, ?, 0, 1, 0, 0)').run(guildId, name, steamAppId);
+    const defaultText = getGuildSetting(guildId, 'games', 'default_text_channel_enabled', false) ? 1 : 0;
+    const defaultGalerie = getGuildSetting(guildId, 'games', 'default_galerie_enabled', false) ? 1 : 0;
+    const defaultChangelog = getGuildSetting(guildId, 'games', 'default_changelog_enabled', false) ? 1 : 0;
+    const defaultForum = getGuildSetting(guildId, 'games', 'default_forum_enabled', false) ? 1 : 0;
+    getDb().prepare('INSERT INTO games (guild_id, name, steam_app_id, galerie_enabled, changelog_enabled, text_channel_enabled, forum_enabled) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      guildId, name, steamAppId, defaultGalerie, defaultChangelog, defaultText, defaultForum
+    );
     await logConfigChange(interaction.guild, interaction.user.id, 'game.add', null, { name, steamAppId });
     await refreshJeuxPanel(interaction.guild);
     await replyEphemeral(interaction, `✅ Jeu **${name}** ajouté.`);
     return true;
   }
 
+function buildPaginatedGameSelect(games, baseCustomId, placeholder, page = 0) {
+  const { buildPaginatedSelect } = require('../utils/paginatedSelect');
+  const options = games.map((g) => ({ label: g.name, value: String(g.game_id) }));
+  const { rows } = buildPaginatedSelect(options, baseCustomId, placeholder, page, { minValues: 1, maxValues: 1 });
+  return rows;
+}
+
+async function handleGameSelectPage(interaction, baseCustomId, placeholder) {
+  const { parsePaginatedCustomId } = require('../utils/paginatedSelect');
+  const { targetPage } = parsePaginatedCustomId(interaction.customId);
+  if (targetPage === null || Number.isNaN(targetPage)) return true;
+  const games = getGamesForGuild(interaction.guildId);
+  await interaction.update({
+    content: placeholder,
+    components: buildPaginatedGameSelect(games, baseCustomId, placeholder, targetPage)
+  });
+  return true;
+}
+
   // ── Modifier un jeu ─────────────────────────────────────────────────────
   if (interaction.isButton() && customId === IDS.editMenu) {
     const games = getGamesForGuild(guildId);
     if (games.length === 0) { await replyEphemeral(interaction, t(guildId, 'config.jeux.noGames')); return true; }
-    const options = games.slice(0, 25).map((g) => ({ label: g.name.slice(0, 100), value: String(g.game_id) }));
-    await replyEphemeral(interaction, {
+    await interaction.reply({
       content: 'Quel jeu souhaitez-vous modifier ?',
-      components: [new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder().setCustomId(IDS.selectEdit).setPlaceholder('Choisir un jeu…').addOptions(options)
-      )]
+      components: buildPaginatedGameSelect(games, IDS.selectEdit, 'Choisir un jeu…', 0),
+      ephemeral: true
     });
     return true;
   }
 
-  if (interaction.isStringSelectMenu() && customId === IDS.selectEdit) {
+  if (interaction.isButton() && customId.startsWith(`${IDS.selectEdit}:page:`)) {
+    return handleGameSelectPage(interaction, IDS.selectEdit, 'Quel jeu souhaitez-vous modifier ?');
+  }
+
+  if (interaction.isStringSelectMenu() && customId.startsWith(`${IDS.selectEdit}:`)) {
     const gameId = Number(interaction.values[0]);
     const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
     if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
-    await replyEphemeral(interaction, { content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, game) });
+    await interaction.reply({
+      content: `**${game.name}** — que souhaitez-vous modifier ?`,
+      components: buildGameEditRows(gameId, game),
+      ephemeral: true
+    });
+    return true;
+  }
+
+  if (interaction.isButton() && customId.startsWith(IDS.linkChannels)) {
+    const gameId = Number(customId.slice(IDS.linkChannels.length));
+    const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
+    if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    const key = getLinkStateKey(guildId, interaction.user.id, gameId);
+    gameLinkStates.set(key, {
+      text: game.channel_text_id,
+      galerie: game.channel_galerie_id,
+      changelog: game.channel_changelog_id,
+      activeType: null
+    });
+    await interaction.reply({
+      content: buildLinkContent(game, gameLinkStates.get(key), interaction.guild),
+      components: buildLinkComponents(interaction, game, gameLinkStates.get(key), 0),
+      ephemeral: true
+    });
+    return true;
+  }
+
+  if (interaction.isButton() && customId.startsWith(IDS.linkType)) {
+    const parts = customId.slice(IDS.linkType.length).split(':');
+    const gameId = Number(parts[0]);
+    const type = parts[1];
+    const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
+    if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
+    const key = getLinkStateKey(guildId, interaction.user.id, gameId);
+    const state = gameLinkStates.get(key) || { text: null, galerie: null, changelog: null, activeType: null };
+    state.activeType = state.activeType === type ? null : type;
+    gameLinkStates.set(key, state);
+    await interaction.editReply({
+      content: buildLinkContent(game, state, interaction.guild),
+      components: buildLinkComponents(interaction, game, state, 0)
+    }).catch(() => {});
+    return true;
+  }
+
+  if (interaction.isButton() && customId.startsWith(IDS.linkChannel) && customId.includes(':page:')) {
+    const parts = customId.slice(IDS.linkChannel.length).split(':');
+    const gameId = Number(parts[0]);
+    const type = parts[1];
+    const targetPage = Number(parts[parts.length - 1]);
+    const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
+    if (!game || Number.isNaN(targetPage)) { await interaction.deferUpdate().catch(() => {}); return true; }
+    const key = getLinkStateKey(guildId, interaction.user.id, gameId);
+    const state = gameLinkStates.get(key) || { text: null, galerie: null, changelog: null, activeType: type };
+    state.activeType = type;
+    await interaction.deferUpdate().catch(() => {});
+    await interaction.editReply({
+      content: buildLinkContent(game, state, interaction.guild),
+      components: buildLinkComponents(interaction, game, state, targetPage)
+    }).catch(() => {});
+    return true;
+  }
+
+  if (interaction.isStringSelectMenu() && customId.startsWith(IDS.linkChannel)) {
+    const parts = customId.slice(IDS.linkChannel.length).split(':');
+    const gameId = Number(parts[0]);
+    const type = parts[1];
+    const currentPage = Number(parts[2] || 0);
+    const value = interaction.values[0];
+    const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
+    if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
+
+    const key = getLinkStateKey(guildId, interaction.user.id, gameId);
+    const state = gameLinkStates.get(key) || { text: null, galerie: null, changelog: null, activeType: type };
+
+    const column = type === 'text' ? 'channel_text_id' : type === 'galerie' ? 'channel_galerie_id' : 'channel_changelog_id';
+    const flagColumn = type === 'text' ? 'text_channel_enabled' : type === 'galerie' ? 'galerie_enabled' : 'changelog_enabled';
+    const linkedId = value === 'unlink' ? null : value;
+
+    getDb().prepare(`UPDATE games SET ${column} = ?, ${flagColumn} = ? WHERE game_id = ?`).run(linkedId, linkedId ? 1 : 0, gameId);
+    state[type] = linkedId;
+    gameLinkStates.set(key, state);
+
+    const updatedGame = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
+    if (linkedId) {
+      await provisionGameStructure(interaction.guild, updatedGame).catch((err) => logger.warn(`jeuxPanel: provisionGameStructure failed — ${err.message}`));
+    }
+    await logConfigChange(interaction.guild, interaction.user.id, `game.${game.name}.${column}`, game[column], linkedId);
+    await refreshJeuxPanel(interaction.guild);
+    await interaction.editReply({
+      content: buildLinkContent(updatedGame, state, interaction.guild),
+      components: buildLinkComponents(interaction, updatedGame, state, currentPage)
+    }).catch(() => {});
+    return true;
+  }
+
+  if (interaction.isButton() && customId.startsWith(IDS.linkDone)) {
+    const gameId = Number(customId.slice(IDS.linkDone.length));
+    const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
+    if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
+    const key = getLinkStateKey(guildId, interaction.user.id, gameId);
+    gameLinkStates.delete(key);
+    await interaction.editReply({ content: `✅ Lien des channels terminé pour **${game.name}**.`, components: [] }).catch(() => {});
     return true;
   }
 
@@ -250,12 +492,17 @@ async function handleJeuxInteraction(interaction) {
     const gameId = Number(customId.slice(IDS.toggleText.length));
     const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
     if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
     const newVal = game.text_channel_enabled ? 0 : 1;
     getDb().prepare('UPDATE games SET text_channel_enabled = ? WHERE game_id = ?').run(newVal, gameId);
     await logConfigChange(interaction.guild, interaction.user.id, `game.${game.name}.text_channel_enabled`, game.text_channel_enabled, newVal);
     await refreshJeuxPanel(interaction.guild);
     const updated = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
-    await interaction.update({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) });
+    if (newVal) {
+      logger.info('jeuxPanel: toggle text ON, calling provisionGameStructure', { guildId, gameId });
+      await provisionGameStructure(interaction.guild, updated).catch((err) => logger.warn(`jeuxPanel: provisionGameStructure failed — ${err.message}`));
+    }
+    await interaction.editReply({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) }).catch(() => {});
     return true;
   }
 
@@ -263,12 +510,14 @@ async function handleJeuxInteraction(interaction) {
     const gameId = Number(customId.slice(IDS.toggleGalerie.length));
     const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
     if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
     const newVal = game.galerie_enabled ? 0 : 1;
     getDb().prepare('UPDATE games SET galerie_enabled = ? WHERE game_id = ?').run(newVal, gameId);
     await logConfigChange(interaction.guild, interaction.user.id, `game.${game.name}.galerie_enabled`, game.galerie_enabled, newVal);
     await refreshJeuxPanel(interaction.guild);
     const updated = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
-    await interaction.update({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) });
+    if (newVal) await provisionGameStructure(interaction.guild, updated).catch((err) => logger.warn(`jeuxPanel: provisionGameStructure failed — ${err.message}`));
+    await interaction.editReply({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) }).catch(() => {});
     return true;
   }
 
@@ -276,12 +525,14 @@ async function handleJeuxInteraction(interaction) {
     const gameId = Number(customId.slice(IDS.toggleChangelog.length));
     const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
     if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
     const newVal = game.changelog_enabled ? 0 : 1;
     getDb().prepare('UPDATE games SET changelog_enabled = ? WHERE game_id = ?').run(newVal, gameId);
     await logConfigChange(interaction.guild, interaction.user.id, `game.${game.name}.changelog_enabled`, game.changelog_enabled, newVal);
     await refreshJeuxPanel(interaction.guild);
     const updated = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
-    await interaction.update({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) });
+    if (newVal) await provisionGameStructure(interaction.guild, updated).catch((err) => logger.warn(`jeuxPanel: provisionGameStructure failed — ${err.message}`));
+    await interaction.editReply({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) }).catch(() => {});
     return true;
   }
 
@@ -289,12 +540,13 @@ async function handleJeuxInteraction(interaction) {
     const gameId = Number(customId.slice(IDS.toggleForum.length));
     const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
     if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
+    await interaction.deferUpdate().catch(() => {});
     const newVal = game.forum_enabled ? 0 : 1;
     getDb().prepare('UPDATE games SET forum_enabled = ? WHERE game_id = ?').run(newVal, gameId);
     await logConfigChange(interaction.guild, interaction.user.id, `game.${game.name}.forum_enabled`, game.forum_enabled, newVal);
     await refreshJeuxPanel(interaction.guild);
     const updated = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
-    await interaction.update({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) });
+    await interaction.editReply({ content: `**${game.name}** — que souhaitez-vous modifier ?`, components: buildGameEditRows(gameId, updated) }).catch(() => {});
     return true;
   }
 
@@ -302,25 +554,28 @@ async function handleJeuxInteraction(interaction) {
   if (interaction.isButton() && customId === IDS.deleteMenu) {
     const games = getGamesForGuild(guildId);
     if (games.length === 0) { await replyEphemeral(interaction, t(guildId, 'config.jeux.noGames')); return true; }
-    const options = games.slice(0, 25).map((g) => ({ label: g.name.slice(0, 100), value: String(g.game_id) }));
-    await replyEphemeral(interaction, {
+    await interaction.reply({
       content: 'Quel jeu souhaitez-vous supprimer ?',
-      components: [new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder().setCustomId(IDS.selectDelete).setPlaceholder('Choisir un jeu…').addOptions(options)
-      )]
+      components: buildPaginatedGameSelect(games, IDS.selectDelete, 'Choisir un jeu…', 0),
+      ephemeral: true
     });
     return true;
   }
 
-  if (interaction.isStringSelectMenu() && customId === IDS.selectDelete) {
+  if (interaction.isButton() && customId.startsWith(`${IDS.selectDelete}:page:`)) {
+    return handleGameSelectPage(interaction, IDS.selectDelete, 'Quel jeu souhaitez-vous supprimer ?');
+  }
+
+  if (interaction.isStringSelectMenu() && customId.startsWith(`${IDS.selectDelete}:`)) {
     const gameId = Number(interaction.values[0]);
     const game = getDb().prepare('SELECT * FROM games WHERE game_id = ?').get(gameId);
     if (!game) { await replyEphemeral(interaction, t(guildId, 'config.jeux.notFound')); return true; }
-    await replyEphemeral(interaction, {
+    await interaction.reply({
       content: `⚠️ Confirmer la suppression de **${game.name}** ? Cette action est irréversible.`,
       components: [new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`${IDS.confirmDelete}${gameId}`).setLabel('🗑️ Confirmer suppression').setStyle(ButtonStyle.Danger)
-      )]
+      )],
+      ephemeral: true
     });
     return true;
   }
@@ -378,6 +633,43 @@ async function handleJeuxInteraction(interaction) {
     await logConfigChange(interaction.guild, interaction.user.id, 'changelogs.frequency_minutes', old, minutes);
     await refreshJeuxPanel(interaction.guild);
     await replyEphemeral(interaction, t(guildId, 'config.changelogs.frequencyUpdated', { minutes: String(minutes) }));
+    return true;
+  }
+
+  // ── Paramètres par défaut à l'ajout d'un jeu ─────────────────────────────
+  if (interaction.isButton() && customId === IDS.defaultText) {
+    const current = getGuildSetting(guildId, 'games', 'default_text_channel_enabled', false);
+    setGuildSetting(guildId, 'games', 'default_text_channel_enabled', !current);
+    await logConfigChange(interaction.guild, interaction.user.id, 'games.default_text_channel_enabled', current, !current);
+    await refreshJeuxPanel(interaction.guild);
+    await replyEphemeral(interaction, `💬 Texte par défaut : **${!current ? 'ON' : 'OFF'}**`);
+    return true;
+  }
+
+  if (interaction.isButton() && customId === IDS.defaultGalerie) {
+    const current = getGuildSetting(guildId, 'games', 'default_galerie_enabled', false);
+    setGuildSetting(guildId, 'games', 'default_galerie_enabled', !current);
+    await logConfigChange(interaction.guild, interaction.user.id, 'games.default_galerie_enabled', current, !current);
+    await refreshJeuxPanel(interaction.guild);
+    await replyEphemeral(interaction, `🖼️ Galerie par défaut : **${!current ? 'ON' : 'OFF'}**`);
+    return true;
+  }
+
+  if (interaction.isButton() && customId === IDS.defaultChangelog) {
+    const current = getGuildSetting(guildId, 'games', 'default_changelog_enabled', false);
+    setGuildSetting(guildId, 'games', 'default_changelog_enabled', !current);
+    await logConfigChange(interaction.guild, interaction.user.id, 'games.default_changelog_enabled', current, !current);
+    await refreshJeuxPanel(interaction.guild);
+    await replyEphemeral(interaction, `📢 Changelog par défaut : **${!current ? 'ON' : 'OFF'}**`);
+    return true;
+  }
+
+  if (interaction.isButton() && customId === IDS.defaultForum) {
+    const current = getGuildSetting(guildId, 'games', 'default_forum_enabled', false);
+    setGuildSetting(guildId, 'games', 'default_forum_enabled', !current);
+    await logConfigChange(interaction.guild, interaction.user.id, 'games.default_forum_enabled', current, !current);
+    await refreshJeuxPanel(interaction.guild);
+    await replyEphemeral(interaction, `🗂️ Forum par défaut : **${!current ? 'ON' : 'OFF'}**`);
     return true;
   }
 

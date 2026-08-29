@@ -121,7 +121,7 @@ async function _handleStep4Security(guildId, interaction) {
         .setLabel(`✅ Confirmer ${selectedName.slice(0, 30)} comme Owner`)
         .setStyle(ButtonStyle.Success)
     );
-    await interaction.message.edit({
+    await interaction.editReply({
       content: [
         `## 👑 Confirmation de l'Owner`,
         '',
@@ -157,7 +157,6 @@ async function _handleStep4Security(guildId, interaction) {
         logger.error('Failed to assign owner role', err);
       }
     }
-    await interaction.message.delete().catch(() => {});
     const guild = interaction.guild;
     try {
       const ownerRoleForPos = guild?.roles?.cache?.get(ownerRoleId);
@@ -176,12 +175,11 @@ async function _handleStep4Security(guildId, interaction) {
     const hasIssues = dangerous.length > 0 || unused.length > 0;
     const alreadyAllResolved = hasIssues && !hasUnresolvedIssues(dangerous, unused, acknowledgedOnEntry);
     if (!hasIssues || alreadyAllResolved) {
-      const fakeIx = { guildId, guild, channel: interaction.channel, client: interaction.client, message: { delete: async () => {} } };
-      await advanceToStep2AfterSecurity(fakeIx, guildId);
+      await advanceToStep2AfterSecurity(interaction, guildId);
     } else {
       const securityContent = buildSecurityCheckContent(dangerous, unused, _s, acknowledgedOnEntry);
       const rows = buildSecurityComponents(dangerous, unused, _s, acknowledgedOnEntry);
-      await interaction.channel.send({ content: securityContent, components: rows }).catch(() => {});
+      await interaction.editReply({ content: securityContent, components: rows }).catch(() => {});
     }
     return true;
   }
@@ -246,7 +244,7 @@ async function _handleStep4Security(guildId, interaction) {
       await interaction.update({ content: secContent, components: buildSecurityComponents(dRA, uRA, _ra, acknowledged) }).catch(() => {
         interaction.deferUpdate().catch(() => {});
       });
-      if (msg) await replyEphemeral(interaction, msg).catch(() => {});
+      if (msg) await interaction.followUp({ content: msg, ephemeral: true }).catch(() => {});
     }
     return true;
   }
@@ -266,7 +264,7 @@ async function _handleStep4Security(guildId, interaction) {
     const _sd = (key, vars) => t(key, vars || {}, { guildId });
     const securityContent = buildSecurityCheckContent(dangerous, unused, _sd, acknowledged);
     if (securityContent) {
-      await interaction.message.edit({ content: securityContent, components: buildSecurityComponents(dangerous, unused, _sd, acknowledged) }).catch(() => {});
+      await interaction.editReply({ content: securityContent, components: buildSecurityComponents(dangerous, unused, _sd, acknowledged) }).catch(() => {});
     } else {
       await advanceToStep2AfterSecurity(interaction, guildId);
     }
@@ -286,7 +284,7 @@ async function _handleStep4Security(guildId, interaction) {
     const _sk = (key, vars) => t(key, vars || {}, { guildId });
     const securityContent = buildSecurityCheckContent(dangerous, remainingUnused, _sk, acknowledged);
     if (securityContent) {
-      await interaction.message.edit({ content: securityContent, components: buildSecurityComponents(dangerous, remainingUnused, _sk, acknowledged) }).catch(() => {});
+      await interaction.editReply({ content: securityContent, components: buildSecurityComponents(dangerous, remainingUnused, _sk, acknowledged) }).catch(() => {});
     } else {
       await advanceToStep2AfterSecurity(interaction, guildId);
     }
@@ -311,7 +309,7 @@ async function _handleStep4Security(guildId, interaction) {
       }
     }
     if (deleteFailed) {
-      await replyEphemeral(interaction, t('roleSecurity.deletePermissionError', {}, { guildId }));
+      await interaction.followUp({ content: t('roleSecurity.deletePermissionError', {}, { guildId }), ephemeral: true }).catch(() => {});
     }
     if (guild) await guild.roles.fetch().catch(() => {});
     const acknowledged = new Set(getGuildSetting(guildId, 'setup', 'security_acknowledged', []));
@@ -319,7 +317,7 @@ async function _handleStep4Security(guildId, interaction) {
     const _da = (key, vars) => t(key, vars || {}, { guildId });
     const securityContent = buildSecurityCheckContent(dangerousAfter, unusedAfter, _da, acknowledged);
     if (securityContent) {
-      await interaction.message.edit({ content: securityContent, components: buildSecurityComponents(dangerousAfter, unusedAfter, _da, acknowledged) }).catch(() => {});
+      await interaction.editReply({ content: securityContent, components: buildSecurityComponents(dangerousAfter, unusedAfter, _da, acknowledged) }).catch(() => {});
     } else {
       await advanceToStep2AfterSecurity(interaction, guildId);
     }
