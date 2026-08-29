@@ -90,7 +90,7 @@ The following commands are identical on Windows, macOS and Linux:
 \`\`\`bash
 # Clone the repository
 git clone https://github.com/${data.GITHUB_REPO}.git
-cd Guardian_Discord_Bot/guardian
+cd ${data.GITHUB_REPO}/guardian
 
 # Install dependencies
 npm install
@@ -155,7 +155,7 @@ function projectStructureSection() {
   return `## 🗂️ Project structure
 
 \`\`\`
-Guardian_Discord_Bot/
+guardian_bot/
 ├── guardian/
 │   ├── commands/          # Slash commands (/ban, /config-games, /admin…)
 │   ├── database/          # SQLite schema + migrations

@@ -73,7 +73,7 @@ write_files:
       # Script de déploiement Guardian à exécuter après le premier boot
       set -e
       cd /opt/guardian
-      git clone https://github.com/jeremiejt38/Guardian_Discord_Bot.git .
+      git clone https://github.com/jeremiejt38/guardian_bot.git .
       cd guardian
       npm ci
       cp .env.example .env
