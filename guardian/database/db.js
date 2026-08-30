@@ -354,8 +354,35 @@ const MIGRATIONS = [
         )
       `);
     }
-  }
+  },
   // @premium-end
+  {
+    version: 13,
+    description: 'rich_presence: consent and session tracking tables',
+    up(conn) {
+      conn.exec(`
+        CREATE TABLE IF NOT EXISTS rich_presence_consent (
+          guild_id TEXT NOT NULL,
+          user_id  TEXT NOT NULL,
+          consented_at TEXT NOT NULL,
+          PRIMARY KEY (guild_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS rich_presence_sessions (
+          session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          guild_id   TEXT NOT NULL,
+          user_id    TEXT NOT NULL,
+          game_name  TEXT NOT NULL,
+          started_at TEXT NOT NULL,
+          ended_at   TEXT,
+          duration_seconds INTEGER
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_rps_guild_user ON rich_presence_sessions(guild_id, user_id);
+        CREATE INDEX IF NOT EXISTS idx_rps_game ON rich_presence_sessions(guild_id, game_name);
+      `);
+    }
+  }
 ];
 
 function migrateDatabase() {
