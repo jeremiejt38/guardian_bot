@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.30.10](https://github.com/jeremiejt38/guardian_bot/compare/guardian-discord-bot-v0.30.9...guardian-discord-bot-v0.30.10) (2026-08-30)
+
+
+### Features
+
+* **rich-presence:** localize command and update docs ([d42d97f](https://github.com/jeremiejt38/guardian_bot/commit/d42d97fbbac3a5969857d43cdd55529031325ec7))
+* **rich-presence:** opt-in activity tracking and leaderboard ([2bb60cd](https://github.com/jeremiejt38/guardian_bot/commit/2bb60cd6c448f29998b0a3452363edfbd9208105))
+* **rich-presence:** opt-in activity tracking and leaderboard ([2a08b7b](https://github.com/jeremiejt38/guardian_bot/commit/2a08b7b78c1c3e082e5a802dd374fd07a87a969c))
+
+
+### Bug Fixes
+
+* **release:** keep bare vX.Y.Z tags without package prefix ([dfda83e](https://github.com/jeremiejt38/guardian_bot/commit/dfda83ee1bf152e5cc7b36209d0241e410c5e102))
+* **release:** keep bare vX.Y.Z tags without package prefix ([c952d9d](https://github.com/jeremiejt38/guardian_bot/commit/c952d9d3cabe0e832356870ebc16dcb64eb554a2))
+
 ## [0.30.9](https://github.com/jeremiejt38/guardian_bot/compare/guardian-discord-bot-v0.30.8...guardian-discord-bot-v0.30.9) (2026-08-30)
 
 
