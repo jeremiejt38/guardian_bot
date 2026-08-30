@@ -79,14 +79,14 @@ Statut:
 - ✅ Config-games refresh et topics i18n sur tous les channels
 - ✅ Setup plus robuste (messages normaux, auto-position, curseur d'étapes)
 - ✅ Suggestions et vocaux temporaires améliorés
+- ✅ Module Rich Presence opt-in : suivi des activités, consentement, classement (`/rich-presence`)
 
 ## Backlog prioritaire (prochaines étapes recommandées)
 
 > Note : les issues GitHub du repo privé sont actuellement toutes fermées. Les items ci-dessous
 > correspondent aux pistes restantes identifiées dans la roadmap, à valider avec le besoin métier.
 
-1. Finaliser le module Rich Presence optionnel (#74) si toujours pertinent.
-2. Poursuivre l'amélioration de la robustesse du setup et des migrations versionnées.
-3. Étoffer la couverture de tests sur les nouveaux modules v0.30.x
+1. Poursuivre l'amélioration de la robustesse du setup et des migrations versionnées.
+2. Étoffer la couverture de tests sur les nouveaux modules v0.30.x
    (`paginatedSelect`, `versionedMigrations`, `setupGamesDetect`).
-4. Documenter le fonctionnement des nouveaux modules dans `docs/architecture.md`.
+3. Documenter le fonctionnement des nouveaux modules dans `docs/architecture.md`.

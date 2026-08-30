@@ -39,8 +39,10 @@
   - `guardian/modules/config/settings.js`
 - Logs:
   - `guardian/modules/logs/logger.js`
-- Optional rich presence placeholder:
+- Rich presence / opt-in activity tracking and leaderboard:
   - `guardian/modules/richPresence/richPresence.js`
+  - `guardian/events/presenceUpdate.js`
+  - `guardian/commands/richPresence.js`
 
 ## Slash commands currently wired
 - `guardian/commands/parrainer.js`
@@ -49,6 +51,7 @@
 - `guardian/commands/kick.js`
 - `guardian/commands/ban.js`
 - `guardian/commands/historique.js`
+- `guardian/commands/richPresence.js`
 
 ## Coverage status snapshot
 - Implemented foundation:

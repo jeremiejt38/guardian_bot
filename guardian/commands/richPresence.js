@@ -7,6 +7,7 @@ const {
   getUserStats,
   getCurrentlyPlaying
 } = require('../modules/richPresence/richPresence');
+const { t, describe } = require('../modules/i18n');
 
 function formatDuration(totalSeconds) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -18,7 +19,7 @@ function formatDuration(totalSeconds) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('rich-presence')
-    .setDescription('Gère le suivi Rich Presence et le classement des jeux (opt-in)')
+    .setDescription(describe('commands.richPresence.description'))
     .addSubcommand((sub) =>
       sub
         .setName('optin')
@@ -62,7 +63,7 @@ module.exports = {
       case 'optin': {
         giveConsent(guildId, userId);
         await interaction.reply({
-          content: '✅ Suivi Rich Presence activé. Tes sessions de jeu seront comptabilisées pour le classement.',
+          content: `✅ ${t(guildId, 'commands.richPresence.optinSuccess')}`,
           ephemeral: true
         });
         return;
@@ -71,7 +72,7 @@ module.exports = {
       case 'optout': {
         revokeConsent(guildId, userId);
         await interaction.reply({
-          content: '✅ Suivi Rich Presence désactivé. Tes données de jeu ont été supprimées.',
+          content: `✅ ${t(guildId, 'commands.richPresence.optoutSuccess')}`,
           ephemeral: true
         });
         return;
@@ -80,7 +81,7 @@ module.exports = {
       case 'stats': {
         if (!isConsented(guildId, userId)) {
           await interaction.reply({
-            content: 'Tu n’as pas encore opt-in. Utilise `/rich-presence optin`.',
+            content: t(guildId, 'commands.richPresence.notOptedIn'),
             ephemeral: true
           });
           return;
@@ -88,15 +89,15 @@ module.exports = {
 
         const stats = getUserStats(guildId, userId);
         const embed = new EmbedBuilder()
-          .setTitle('🎮 Tes stats Rich Presence')
+          .setTitle(`🎮 ${t(guildId, 'commands.richPresence.statsTitle')}`)
           .setColor(0x5865f2)
-          .setDescription(`**Sessions terminées :** ${stats.sessions}\n**Temps total :** ${formatDuration(stats.total_seconds)}`);
+          .setDescription(`**${t(guildId, 'commands.richPresence.statsSessions')} :** ${stats.sessions}\n**${t(guildId, 'commands.richPresence.statsTotalTime')} :** ${formatDuration(stats.total_seconds)}`);
 
         if (stats.byGame.length > 0) {
           const lines = stats.byGame
             .slice(0, 10)
             .map((row, index) => `${index + 1}. **${row.game_name}** — ${formatDuration(row.total_seconds)} (${row.sessions} session${row.sessions > 1 ? 's' : ''})`);
-          embed.addFields({ name: 'Top jeux', value: lines.join('\n') });
+          embed.addFields({ name: t(guildId, 'commands.richPresence.statsTopGames'), value: lines.join('\n') });
         }
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -108,11 +109,11 @@ module.exports = {
         const rows = getLeaderboard(guildId, limit);
 
         const embed = new EmbedBuilder()
-          .setTitle('🏆 Classement des jeux les plus joués')
+          .setTitle(`🏆 ${t(guildId, 'commands.richPresence.leaderboardTitle')}`)
           .setColor(0x5865f2);
 
         if (rows.length === 0) {
-          embed.setDescription('Aucune session enregistrée. Les membres doivent d’abord faire `/rich-presence optin`.');
+          embed.setDescription(t(guildId, 'commands.richPresence.leaderboardEmpty'));
         } else {
           const lines = rows.map((row, index) => {
             const user = interaction.guild.members.cache.get(row.user_id)?.user?.username ?? `<@${row.user_id}>`;
@@ -128,11 +129,11 @@ module.exports = {
       case 'now': {
         const rows = getCurrentlyPlaying(guildId);
         const embed = new EmbedBuilder()
-          .setTitle('🎮 En train de jouer')
+          .setTitle(`🎮 ${t(guildId, 'commands.richPresence.nowTitle')}`)
           .setColor(0x5865f2);
 
         if (rows.length === 0) {
-          embed.setDescription('Personne n’est en jeu actuellement.');
+          embed.setDescription(t(guildId, 'commands.richPresence.nowEmpty'));
         } else {
           const lines = rows.map((row) => {
             const user = interaction.guild.members.cache.get(row.user_id)?.user?.username ?? `<@${row.user_id}>`;

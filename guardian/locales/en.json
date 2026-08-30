@@ -415,6 +415,20 @@
       "title": "Available languages",
       "current": "Current language: {{language}} ({{code}}).",
       "item": "- {{language}} ({{code}})"
+    },
+    "richPresence": {
+      "description": "Manage Rich Presence tracking and game leaderboard (opt-in)",
+      "optinSuccess": "Rich Presence tracking enabled. Your game sessions will count toward the leaderboard.",
+      "optoutSuccess": "Rich Presence tracking disabled. Your game data has been deleted.",
+      "notOptedIn": "You have not opted in yet. Use /rich-presence optin.",
+      "statsTitle": "Your Rich Presence stats",
+      "statsSessions": "Completed sessions",
+      "statsTotalTime": "Total time",
+      "statsTopGames": "Top games",
+      "leaderboardTitle": "Most played games leaderboard",
+      "leaderboardEmpty": "No sessions recorded. Members must first use /rich-presence optin.",
+      "nowTitle": "Currently playing",
+      "nowEmpty": "No one is currently playing."
     }
   },
   "help": {

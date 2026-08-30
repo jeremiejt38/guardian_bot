@@ -599,6 +599,20 @@
       "title": "Langues disponibles",
       "current": "Langue active: {{language}} ({{code}}).",
       "item": "- {{language}} ({{code}})"
+    },
+    "richPresence": {
+      "description": "Gere le suivi Rich Presence et le classement des jeux (opt-in)",
+      "optinSuccess": "Suivi Rich Presence active. Tes sessions de jeu seront comptabilisees pour le classement.",
+      "optoutSuccess": "Suivi Rich Presence desactive. Tes donnees de jeu ont ete supprimees.",
+      "notOptedIn": "Tu n'as pas encore opt-in. Utilise /rich-presence optin.",
+      "statsTitle": "Tes stats Rich Presence",
+      "statsSessions": "Sessions terminees",
+      "statsTotalTime": "Temps total",
+      "statsTopGames": "Top jeux",
+      "leaderboardTitle": "Classement des jeux les plus joues",
+      "leaderboardEmpty": "Aucune session enregistree. Les membres doivent d'abord faire /rich-presence optin.",
+      "nowTitle": "En train de jouer",
+      "nowEmpty": "Personne n'est en jeu actuellement."
     }
   },
   "help": {
