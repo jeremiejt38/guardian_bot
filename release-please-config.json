@@ -3,6 +3,7 @@
     ".": {
       "release-type": "node",
       "package-name": "guardian-discord-bot",
+      "monorepo-tags": false,
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
