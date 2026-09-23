@@ -1,5 +1,7 @@
 # 🧪 Tests — Guardian Discord Bot
 
+> La source de vérité canonique pour la validation KSP est [`docs/TESTING.md`](./TESTING.md). Ce fichier documente le détail de la suite de tests.
+
 ## Lancer les tests
 
 ```bash

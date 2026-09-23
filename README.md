@@ -4,7 +4,7 @@
 
 **All-in-one Discord community bot for gaming servers**
 
-[![Version](https://img.shields.io/badge/version-v0.30.8-blue?style=flat-square)](https://github.com/jeremiejt38/guardian_bot/releases)
+[![Version](https://img.shields.io/badge/version-v0.30.10-blue?style=flat-square)](https://github.com/jeremiejt38/guardian_bot/releases)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-green?style=flat-square)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE)
 
@@ -21,7 +21,8 @@
 | 🧙 **Setup wizard** | Guided 9-step configuration directly inside Discord |
 | 👥 **Members** | Invite → Member onboarding (3 modes: Classic / Strict / Direct), sponsorship, behavior score, rules acceptance |
 | 🎮 **Games** | Per-game opt-in, dedicated channels (chat / gallery / updates), Steam & RAWG.io integration |
-| 🔊 **Temporary voice** | On-demand creation, auto-deletion, prefix/suffix/limit |
+| � **Rich Presence** | Consent-based game activity tracking, personal statistics and guild leaderboard |
+| �🔊 **Temporary voice** | On-demand creation, auto-deletion, prefix/suffix/limit |
 | 🛡️ **Moderation** | Anti-spam, blacklist, logs, behavior score, auto-expulsion, Discord AutoMod integration |
 | 🖥️ **Game servers** | Proposal, approval and tracking of community game servers |
 | ⚙️ **Config panels** | Persistent admin panels per module (channels, roles, games…) |
