@@ -250,7 +250,11 @@ async function openOrRefreshPanel(client, view = null) {
 
     return msg;
   } catch (err) {
-    logger.error('adminPanel: openOrRefreshPanel error', err);
+    if (err && err.code === 50278) {
+      logger.warn('adminPanel: bot admin has no mutual guild with this bot — panel skipped');
+    } else {
+      logger.error('adminPanel: openOrRefreshPanel error', err);
+    }
     return null;
   }
 }
