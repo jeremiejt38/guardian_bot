@@ -1,4 +1,3 @@
-const { MessageFlags } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } = require('discord.js');
 const { setConfig, getConfig } = require('../../database/db');
 const { isBotAdmin, getBotAdminId, isRunningUnderPM2 } = require('./adminUtils');
