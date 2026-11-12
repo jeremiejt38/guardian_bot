@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, StringSelectMenuBuilder } = require('discord.js');
 const { getDb } = require('../../database/db');
 const { CHANNEL_NAMES, GRADE_NAMES, CATEGORIES } = require('../../config');
@@ -156,7 +157,7 @@ async function handleTempVoiceInteraction(interaction) {
     await interaction.reply({
       content: t('tempVoice.selectPrompt', {}, { guildId: interaction.guildId }),
       components: buildGameSelect(interaction.guildId, games, 0),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }
@@ -214,7 +215,7 @@ async function handleTempVoiceInteraction(interaction) {
       try {
         const msg = await interaction.followUp({
           content: `🎙️ ${t('tempVoice.joinPrompt', { channel: `<#${created.id}>` }, { guildId: interaction.guildId })}`,
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
         pendingJoinMessages.set(`${interaction.user.id}:${created.id}`, msg);
         await interaction.update({ content: '\u200b', components: [] }).catch(() => {});

@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const { getDb } = require('../../database/db');
 const { CHANNEL_NAMES } = require('../../config');
@@ -134,7 +135,7 @@ async function handleGamesInteraction(interaction) {
     await interaction.reply({
       content: t('games.selectPrompt', {}, { guildId: interaction.guildId }),
       components: buildGameSelect(interaction.guildId, games, selected, 0),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }

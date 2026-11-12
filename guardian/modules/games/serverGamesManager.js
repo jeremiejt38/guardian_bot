@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -372,7 +373,7 @@ async function handleServerGamesInteraction(interaction) {
     await interaction.reply({
       content: t('serverGames.removeSelectPrompt', {}, { guildId: interaction.guildId }),
       components: buildRemoveSelect(interaction.guildId, games, 0),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }

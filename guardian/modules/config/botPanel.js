@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -308,7 +309,7 @@ async function handleBotInteraction(interaction) {
       return true;
     }
     const payload = await buildStepPayload(guildId, interaction.guild, step);
-    await interaction.reply({ embeds: payload.embeds, components: payload.components, ephemeral: true }).catch(() => {});
+    await interaction.reply({ embeds: payload.embeds, components: payload.components, flags: MessageFlags.Ephemeral }).catch(() => {});
     return true;
   }
 

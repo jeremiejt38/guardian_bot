@@ -1,4 +1,5 @@
 'use strict';
+const { MessageFlags } = require('discord.js');
 const ctx = require('./_sharedContext');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle,
   GRADE_NAMES, matchGameFromChannelName, generateNonSteamId, isNonSteamId, GENERIC_CHANNEL_NAMES,
@@ -220,7 +221,7 @@ async function _handleNavAndTransitions(guildId, interaction) {
         '',
         '⏭️ Tu peux aussi cliquer sur **Continuer sans activer** — Guardian fonctionnera sans les fonctionnalités communautaires.'
       ].join('\n'),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     }).catch(() => {});
     return true;
   }

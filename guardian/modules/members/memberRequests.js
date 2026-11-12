@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder } = require("discord.js");
 const { CHANNELS, GRADE_NAMES } = require("../../config");
 const { getGradeMappings } = require("../initialisation/gradeMapping");
@@ -145,7 +146,7 @@ async function handleMemberRequestModal(interaction) {
   const customId = interaction.customId;
   const channel = interaction.guild.channels.cache.find(c => c.name === CHANNELS.reports);
   if (!channel) {
-    await interaction.reply({ content: 'Erreur : Channel de signalement non trouvé.', ephemeral: true });
+    await interaction.reply({ content: 'Erreur : Channel de signalement non trouvé.', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -218,7 +219,7 @@ async function handleMemberRequestModal(interaction) {
 
   await channel.send({ embeds: [embed], components: [row] });
 
-  await interaction.reply({ content: '✅ Ta demande a été envoyée à la modération.', ephemeral: true });
+  await interaction.reply({ content: '✅ Ta demande a été envoyée à la modération.', flags: MessageFlags.Ephemeral });
 }
 
 async function handleApproveReject(interaction) {
@@ -240,7 +241,7 @@ async function handleApproveReject(interaction) {
   const moderatorRoleId = mappings[GRADE_NAMES.moderateur];
   
   if (!moderatorRoleId) {
-    await interaction.reply({ content: 'Erreur : Rôle de modérateur non configuré.', ephemeral: true });
+    await interaction.reply({ content: 'Erreur : Rôle de modérateur non configuré.', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -248,7 +249,7 @@ async function handleApproveReject(interaction) {
   const ownerRoleId = mappings[GRADE_NAMES.owner];
   const hasPermission = [moderatorRoleId, managerRoleId, ownerRoleId].filter(Boolean).some((id) => interaction.member.roles.cache.has(id));
   if (!hasPermission) {
-    await interaction.reply({ content: 'Erreur : Vous n\'avez pas la permission pour approuver ou rejeter cette demande.', ephemeral: true });
+    await interaction.reply({ content: 'Erreur : Vous n\'avez pas la permission pour approuver ou rejeter cette demande.', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -257,7 +258,7 @@ async function handleApproveReject(interaction) {
     : `❌ Refusé par <@${interaction.user.id}>`;
 
   await interaction.message.edit({ components: [], content: actionText }).catch(() => {});
-  await interaction.reply({ content: 'Action enregistrée.', ephemeral: true });
+  await interaction.reply({ content: 'Action enregistrée.', flags: MessageFlags.Ephemeral });
 }
 
 module.exports = { 

@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const logger = require('../logs/logger');
 
 const DISCORD_ERROR_CODES = Object.freeze({
@@ -71,9 +72,9 @@ async function handleInteractionError(interaction, err, context = 'interaction')
       const msg = '⚠️ Le bot manque de permissions pour effectuer cette action. Vérifie que Guardian a bien les droits nécessaires sur ce serveur.';
       try {
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content: msg, ephemeral: true });
+          await interaction.followUp({ content: msg, flags: MessageFlags.Ephemeral });
         } else {
-          await interaction.reply({ content: msg, ephemeral: true });
+          await interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
         }
       } catch { /* interaction may already be expired */ }
       return true;

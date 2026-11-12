@@ -1,4 +1,5 @@
 'use strict';
+const { MessageFlags } = require('discord.js');
 const ctx = require('./_sharedContext');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle,
   GRADE_NAMES, matchGameFromChannelName, generateNonSteamId, isNonSteamId, GENERIC_CHANNEL_NAMES,
@@ -189,7 +190,7 @@ async function _handleStep3(guildId, interaction) {
       0,
       { minValues: 1, maxValues: 1 }
     );
-    await interaction.reply({ content: `**${results.length}** salon(s) trouvé(s), choisis :`, components: rows, ephemeral: true }).catch(() => {});
+    await interaction.reply({ content: `**${results.length}** salon(s) trouvé(s), choisis :`, components: rows, flags: MessageFlags.Ephemeral }).catch(() => {});
     return true;
   }
 

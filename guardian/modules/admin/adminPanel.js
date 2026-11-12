@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } = require('discord.js');
 const { setConfig, getConfig } = require('../../database/db');
 const { isBotAdmin, getBotAdminId, isRunningUnderPM2 } = require('./adminUtils');
@@ -261,7 +262,7 @@ async function openOrRefreshPanel(client, view = null) {
 
 async function handlePanelInteraction(interaction, client) {
   if (!isBotAdmin(interaction.user.id)) {
-    await interaction.reply({ content: '❌ Accès réservé à l\'administrateur bot.', ephemeral: true }).catch(() => {});
+    await interaction.reply({ content: '❌ Accès réservé à l\'administrateur bot.', flags: MessageFlags.Ephemeral }).catch(() => {});
     return true;
   }
 

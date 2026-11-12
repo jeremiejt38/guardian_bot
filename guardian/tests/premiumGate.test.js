@@ -44,7 +44,8 @@ test('handlePremiumGateClick — répond en éphémère avec info premium', asyn
   const { handlePremiumGateClick } = require('../modules/tier/premiumGate');
   await handlePremiumGateClick(fakeInteraction);
   assert.ok(replied, 'reply() doit être appelé');
-  assert.equal(replied.ephemeral, true, 'La réponse doit être éphémère');
+  const { MessageFlags } = require('discord.js');
+  assert.equal(replied.flags, MessageFlags.Ephemeral, 'La réponse doit être éphémère');
   assert.ok(typeof replied.content === 'string' && replied.content.length > 0, 'Le contenu doit être non vide');
 });
 

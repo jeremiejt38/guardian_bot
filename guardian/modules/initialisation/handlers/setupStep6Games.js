@@ -1,4 +1,5 @@
 'use strict';
+const { MessageFlags } = require('discord.js');
 const ctx = require('./_sharedContext');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle,
   GRADE_NAMES, matchGameFromChannelName, generateNonSteamId, isNonSteamId, GENERIC_CHANNEL_NAMES,
@@ -77,7 +78,7 @@ async function _handleStep6(guildId, interaction) {
     let steamResult = null;
     let deferredReply = false;
     try {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       deferredReply = true;
     } catch (err) {
       logger.warn('addGameModal: deferReply failed', { error: err?.message });
@@ -140,7 +141,7 @@ async function _handleStep6(guildId, interaction) {
     const name = interaction.fields.getTextInputValue('name').trim();
     const steamId = interaction.fields.getTextInputValue('steam_id').trim() || null;
     let deferredReply = false;
-    try { await interaction.deferReply({ ephemeral: true }); deferredReply = true; } catch {}
+    try { await interaction.deferReply({ flags: MessageFlags.Ephemeral }); deferredReply = true; } catch {}
     let game;
     try {
       game = addSetupGame(guildId, { name, steam_app_id: steamId, galerie_enabled: false, changelog_enabled: true });
@@ -209,7 +210,7 @@ async function _handleStep6(guildId, interaction) {
       logger.error('updateSetupGame failed', { error: err?.message, guildId, gameId });
     }
     let deferredReply = false;
-    try { await interaction.deferReply({ ephemeral: true }); deferredReply = true; } catch {}
+    try { await interaction.deferReply({ flags: MessageFlags.Ephemeral }); deferredReply = true; } catch {}
     setGuildSetting(guildId, 'setup', 'games_substep', 'edit');
     const wizardMsg = await interaction.channel.messages.fetch({ limit: 20 })
       .then((msgs) => msgs.find((m) => m.author?.id === interaction.client?.user?.id && m.components?.length > 0))

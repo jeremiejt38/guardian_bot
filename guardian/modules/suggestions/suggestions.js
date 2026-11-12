@@ -5,6 +5,7 @@
  * Module de gestion du forum de suggestions avec statuts — feature premium.
  */
 
+const { MessageFlags } = require('discord.js');
 const { isPremiumFeatureEnabled } = require('../tier/premiumGateUI');
 const { getGuildSetting } = require('../config/settings');
 const { CHANNELS } = require('../../config');
@@ -81,7 +82,7 @@ async function handleNewSuggestionThreadPremium(thread) {
 
 async function handleSuggestionInteractionPremium(interaction) {
   if (!canManageSuggestions(interaction.member, interaction.guildId)) {
-    await interaction.reply({ content: '❌ Seuls les modérateurs peuvent gérer les suggestions.', ephemeral: true });
+    await interaction.reply({ content: '❌ Seuls les modérateurs peuvent gérer les suggestions.', flags: MessageFlags.Ephemeral });
     return true;
   }
 
@@ -137,7 +138,7 @@ async function handleSuggestionInteraction(interaction) {
   if (!interaction.customId?.startsWith('suggestions:status:')) return false;
 
   if (!isPremiumFeatureEnabled(interaction.guildId)) {
-    await interaction.reply({ content: '🔒 Cette feature est disponible en **Guardian Premium** uniquement.', ephemeral: true });
+    await interaction.reply({ content: '🔒 Cette feature est disponible en **Guardian Premium** uniquement.', flags: MessageFlags.Ephemeral });
     return true;
   }
 

@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { execFile } = require('child_process');
 const path = require('path');
 const logger = require('../logs/logger');
@@ -192,7 +193,7 @@ async function notifyBotAdminUpdate(client, fromVersion, toVersion) {
 
 async function performUpdate(interaction) {
   if (!isBotAdmin(interaction.user.id)) {
-    await interaction.reply({ content: '❌ Tu n\'es pas autorisé à effectuer cette action.', ephemeral: true }).catch(() => {});
+    await interaction.reply({ content: '❌ Tu n\'es pas autorisé à effectuer cette action.', flags: MessageFlags.Ephemeral }).catch(() => {});
     return;
   }
 

@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder } = require('discord.js');
 const { isPremiumFeatureEnabled } = require('../modules/tier/premiumGateUI');
 
@@ -13,13 +14,13 @@ module.exports = {
     ),
   async execute(interaction) {
     if (!interaction.member.permissions.has('ManageGuild')) {
-      return interaction.reply({ content: 'Tu dois avoir la permission Gérer le serveur.', ephemeral: true });
+      return interaction.reply({ content: 'Tu dois avoir la permission Gérer le serveur.', flags: MessageFlags.Ephemeral });
     }
 
     if (!isPremiumFeatureEnabled(interaction.guildId)) {
       return interaction.reply({
         content: '🔒 Cette fonctionnalité est réservée à Guardian Premium. Contactez le développeur pour obtenir une licence.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -28,9 +29,9 @@ module.exports = {
     const key = interaction.options.getString('key');
     try {
       linkLicenseToGuild(key, interaction.guildId);
-      return interaction.reply({ content: '✅ Licence activée avec succès. Guardian Premium est maintenant actif sur ce serveur.', ephemeral: true });
+      return interaction.reply({ content: '✅ Licence activée avec succès. Guardian Premium est maintenant actif sur ce serveur.', flags: MessageFlags.Ephemeral });
     } catch (err) {
-      return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+      return interaction.reply({ content: `❌ ${err.message}`, flags: MessageFlags.Ephemeral });
     }
     // @premium-end
   },

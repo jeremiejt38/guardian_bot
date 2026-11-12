@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -136,7 +137,7 @@ async function handleGuardianInteraction(interaction) {
   }
 
   if (interaction.isButton() && customId === IDS.refreshPanels) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
     const { seedGuildMessages } = require('../../modules/initialisation/seeds');
     await seedGuildMessages(interaction.guild);
     await seedGuardianPanel(interaction.guild);
@@ -159,7 +160,7 @@ async function handleGuardianInteraction(interaction) {
   }
 
   if (interaction.isButton() && customId === IDS.syncMembers) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
     const db = getDb();
     const mappings = getGradeMappings(guildId);
     const invertedMap = {};
