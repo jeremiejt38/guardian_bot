@@ -5,7 +5,7 @@
 **All-in-one Discord community bot for gaming servers**
 
 [![Version](https://img.shields.io/badge/version-v0.30.10-blue?style=flat-square)](https://github.com/jeremiejt38/guardian_bot/releases)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-green?style=flat-square)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-%3E%3D22-green?style=flat-square)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE)
 
 *Member management, games, temporary voice channels, moderation and configuration — all from an interactive Discord wizard.*
@@ -44,7 +44,7 @@
 
 ### Step 0 — Prerequisites
 
-#### Node.js ≥ 18
+#### Node.js ≥ 22
 
 | OS | Command |
 |----|---------|
