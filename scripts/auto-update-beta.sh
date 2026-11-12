@@ -71,7 +71,9 @@ wait_for_ready() { # healthy = a "Connected as" log line newer than $1 (epoch)
 cd "$REPO_DIR" || exit 1
 git fetch origin "$BRANCH" || { log "git fetch failed — keeping current code"; exit 1; }
 
-LOCAL=$(git rev-parse "$BRANCH")
+# HEAD = the actually deployed commit. The checkout lives on `main`, so
+# comparing the local `beta` ref would redeploy every cron tick forever.
+LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse "origin/$BRANCH")
 
 if [ "$LOCAL" = "$REMOTE" ]; then
