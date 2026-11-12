@@ -1,6 +1,7 @@
 const { getPremiumExpiry, deactivatePremium } = require('./tier');
 const { getGuildSetting, setGuildSetting } = require('../config/settings');
 const logger = require('../logs/logger');
+const { guardAsync } = require('../utils/intervalGuard');
 
 const FREE_REPO_URL = 'https://github.com/jeremiejt38/Guardian_Discord_Bot_Free';
 const MIGRATION_GUIDE_URL = 'https://github.com/jeremiejt38/Guardian_Discord_Bot_Free#migration';
@@ -94,9 +95,9 @@ function startExpirationChecker(client, intervalMs = 60 * 60 * 1000) {
   // Initial check after a short delay to avoid blocking ready
   setTimeout(() => checkPremiumExpirations(client).catch((err) => logger.error('[expirationChecker] initial check failed', err)), 30 * 1000);
 
-  const interval = setInterval(() => {
+  const interval = setInterval(guardAsync(async () => {
     checkPremiumExpirations(client).catch((err) => logger.error('[expirationChecker] periodic check failed', err));
-  }, intervalMs);
+  }), intervalMs);
 
   client.__expirationCheckerInterval = interval;
 }

@@ -56,7 +56,17 @@ process.on('unhandledRejection', (err) => {
 
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught exception', { message: err?.message, stack: err?.stack });
+  // Uncaught state is undefined — let PM2 restart us rather than limp on.
+  process.exit(1);
 });
+
+async function shutdown(signal) {
+  logger.info(`${signal} received, shutting down`);
+  try { await client.destroy(); } catch {}
+  process.exit(0);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 (async () => {
   try {

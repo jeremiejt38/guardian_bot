@@ -5,6 +5,7 @@ const { resolveTextChannel } = require('../utils/channels');
 const { createGuildRunTracker } = require('../utils/scheduling');
 const { isNonSteamId } = require('./steamGamesList');
 const logger = require('../logs/logger');
+const { guardAsync } = require('../utils/intervalGuard');
 
 const runTracker = createGuildRunTracker();
 
@@ -137,9 +138,9 @@ async function checkSteamChangelogs(client) {
 }
 
 function startChangelogTimer(client, intervalMs = 60 * 1000) {
-  return setInterval(() => {
+  return setInterval(guardAsync(async () => {
     checkSteamChangelogs(client).catch((error) => logger.error('Steam changelog timer failure', error));
-  }, intervalMs);
+  }), intervalMs);
 }
 
 module.exports = {

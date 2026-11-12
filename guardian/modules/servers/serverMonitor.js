@@ -5,6 +5,7 @@ const { CHANNEL_NAMES } = require('../../config');
 const { getGuildSetting } = require('../config/settings');
 const { resolveTextChannel } = require('../utils/channels');
 const { createGuildRunTracker } = require('../utils/scheduling');
+const { guardAsync } = require('../utils/intervalGuard');
 const logger = require('../logs/logger');
 
 const runTracker = createGuildRunTracker();
@@ -123,9 +124,12 @@ async function monitorServers(client) {
 }
 
 function startServerMonitor(client, intervalMs = 60 * 1000) {
-  return setInterval(() => {
-    monitorServers(client).catch((error) => logger.error('Server monitor cycle failure', error));
-  }, intervalMs);
+  return setInterval(
+    guardAsync(async () => {
+      await monitorServers(client).catch((error) => logger.error('Server monitor cycle failure', error));
+    }),
+    intervalMs
+  );
 }
 
 module.exports = {

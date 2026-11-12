@@ -2,11 +2,12 @@ const { getDb } = require('../../database/db');
 const { getGuildSetting } = require('../config/settings');
 const { sendModLog } = require('../moderation/modLog');
 const logger = require('../logs/logger');
+const { guardAsync } = require('../utils/intervalGuard');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function startInviteExpulsionJob(client, intervalMs = DAY_MS) {
-  return setInterval(async () => {
+  return setInterval(guardAsync(async () => {
     const db = getDb();
     const rows = db.prepare("SELECT guild_id, user_id, join_date FROM members WHERE grade = 'invite'").all();
 
@@ -34,7 +35,7 @@ function startInviteExpulsionJob(client, intervalMs = DAY_MS) {
         logger.error('Failed invite expulsion cycle item', error);
       }
     }
-  }, intervalMs);
+  }), intervalMs);
 }
 
 module.exports = {
