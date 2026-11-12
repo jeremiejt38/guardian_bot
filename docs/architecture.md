@@ -1,5 +1,7 @@
 # 🏗️ Architecture — Guardian Discord Bot
 
+
+> Canonical KSP validation/architecture source: [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md). This file keeps the detailed per-module documentation (v0.23.9 era).
 > Mise à jour : v0.23.9
 
 ## Démarrage (`index.js`)
