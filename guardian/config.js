@@ -113,7 +113,10 @@ module.exports = {
   NODE_ENV,
   DISCORD_TOKEN,
   CLIENT_ID: process.env.CLIENT_ID,
-  DATABASE_PATH: path.resolve(process.cwd(), process.env.DATABASE_PATH || './data/guardian.db'),
+  DATABASE_PATH: (() => {
+    const p = process.env.DATABASE_PATH || './data/guardian.db';
+    return p === ':memory:' ? ':memory:' : path.resolve(process.cwd(), p);
+  })(),
   CATEGORIES,
   CHANNELS,
   CHANNEL_NAMES,
