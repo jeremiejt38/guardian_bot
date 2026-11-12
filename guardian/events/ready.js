@@ -22,6 +22,7 @@ const logger = require('../modules/logs/logger');
 const { version } = require('../package.json');
 const { notifyBotAdminUpdate, getBotAdminId, bootstrapAdminIfNeeded } = require('../modules/admin/botUpdater');
 const { sendAdminDmMessage } = require('../modules/admin/adminPanel');
+const { guardAsync } = require('../modules/utils/intervalGuard');
 const { notifyAllGuildsNewOptions } = require('../modules/migrations/newOptionsNotifier');
 const { initAlerts, alertGuildJoin, alertGuildLeave } = require('../modules/admin/adminAlerts');
 const { openOrRefreshPanel, pushPanelToBottom } = require('../modules/admin/adminPanel');
@@ -129,17 +130,17 @@ module.exports = {
 
     await notifyAllGuildsNewOptions(client).catch(() => {});
 
-    setInterval(() => {
+    setInterval(guardAsync(async () => {
       for (const guild of client.guilds.cache.values()) {
         upsertStatusEmbed(guild).catch(() => {});
       }
-    }, 5 * 60 * 1000);
+    }), 5 * 60 * 1000);
 
     startInviteExpulsionJob(client);
     startChangelogTimer();
     startServerMonitor(client, 60 * 1000);
     startExpirationChecker(client);
-    setInterval(() => runPassiveScoreRegen(client).catch((err) => logger.error('Passive regen error', err)), 60 * 60 * 1000);
+    setInterval(guardAsync(async () => runPassiveScoreRegen(client).catch((err) => logger.error('Passive regen error', err))), 60 * 60 * 1000);
     runPassiveScoreRegen(client).catch((err) => logger.error('Passive regen error', err));
   }
 };
