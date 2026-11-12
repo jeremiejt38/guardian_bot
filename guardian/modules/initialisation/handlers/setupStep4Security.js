@@ -1,4 +1,5 @@
 'use strict';
+const { MessageFlags } = require('discord.js');
 const ctx = require('./_sharedContext');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle,
   GRADE_NAMES, matchGameFromChannelName, generateNonSteamId, isNonSteamId, GENERIC_CHANNEL_NAMES,
@@ -244,7 +245,7 @@ async function _handleStep4Security(guildId, interaction) {
       await interaction.update({ content: secContent, components: buildSecurityComponents(dRA, uRA, _ra, acknowledged) }).catch(() => {
         interaction.deferUpdate().catch(() => {});
       });
-      if (msg) await interaction.followUp({ content: msg, ephemeral: true }).catch(() => {});
+      if (msg) await interaction.followUp({ content: msg, flags: MessageFlags.Ephemeral }).catch(() => {});
     }
     return true;
   }
@@ -309,7 +310,7 @@ async function _handleStep4Security(guildId, interaction) {
       }
     }
     if (deleteFailed) {
-      await interaction.followUp({ content: t('roleSecurity.deletePermissionError', {}, { guildId }), ephemeral: true }).catch(() => {});
+      await interaction.followUp({ content: t('roleSecurity.deletePermissionError', {}, { guildId }), flags: MessageFlags.Ephemeral }).catch(() => {});
     }
     if (guild) await guild.roles.fetch().catch(() => {});
     const acknowledged = new Set(getGuildSetting(guildId, 'setup', 'security_acknowledged', []));

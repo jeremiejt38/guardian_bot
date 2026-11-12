@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { t, describe } = require('../modules/i18n');
 const { replyEphemeral } = require('../modules/utils/interactions');
@@ -142,7 +143,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle(t(guildId, 'commands.configGames.listTitle', { count: String(games.length) }))
         .setDescription(lines.join('\n'));
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'toggle-galerie' || sub === 'toggle-changelog' || sub === 'toggle-text') {
@@ -179,7 +180,7 @@ module.exports = {
 
     if (sub === 'set-layout') {
       const mode = interaction.options.getString('mode', true);
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
       await rebuildGameLayout(interaction.guild, mode).catch((err) => {
         logger.error('config-games set-layout failed', { error: err?.message, guildId, mode });
       });
@@ -188,7 +189,7 @@ module.exports = {
     }
 
     if (sub === 'refresh') {
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
       await provisionGuildGameStructures(interaction.guild).catch((err) => {
         logger.error('config-games refresh failed', { error: err?.message, guildId });
       });

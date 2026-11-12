@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { activatePremium, deactivatePremium, checkTier } = require('../modules/tier/tier');
 
@@ -32,7 +33,7 @@ module.exports = {
     if (!isDevMode()) {
       await interaction.reply({
         content: 'This command is only available in development mode.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -41,7 +42,7 @@ module.exports = {
     if (!guildId) {
       await interaction.reply({
         content: 'This command must be used inside a server.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -52,19 +53,19 @@ module.exports = {
       activatePremium(guildId, null);
       await interaction.reply({
         content: '✅ Premium enabled for this server (dev mode, no expiration).',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     } else if (action === 'disable') {
       deactivatePremium(guildId);
       await interaction.reply({
         content: '✅ Premium disabled for this server.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     } else {
       const tier = checkTier(guildId);
       await interaction.reply({
         content: `Current tier for this server: **${tier}**.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
   }

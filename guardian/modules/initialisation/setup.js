@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   ChannelType,
   PermissionFlagsBits,
@@ -1367,10 +1368,10 @@ async function handleSetupCleanModal(interaction) {
   const guild = interaction.guild;
   const value = interaction.fields.getTextInputValue('confirm_input')?.trim();
   if (value?.toUpperCase() !== 'SUPPRIMER') {
-    await interaction.reply({ content: '❌ Confirmation incorrecte — suppression annulée.', ephemeral: true }).catch(() => {});
+    await interaction.reply({ content: '❌ Confirmation incorrecte — suppression annulée.', flags: MessageFlags.Ephemeral }).catch(() => {});
     return;
   }
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
   let deleted = 0;
   const protectedNames = new Set(Object.values(CHANNELS));
   for (const channel of [...guild.channels.cache.values()]) {
@@ -1418,7 +1419,7 @@ async function handleSetupCleanVocalsButton(interaction) {
   if (!interaction.inGuild() || !interaction.guild) return;
   const guildId = interaction.guildId;
   const guild = interaction.guild;
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
   const protectedNames = new Set([CHANNELS.voiceGeneral, CHANNELS.voiceAfk]);
   let deleted = 0;
   for (const channel of [...guild.channels.cache.values()]) {
@@ -1436,7 +1437,7 @@ async function handleSetupCleanRolesButton(interaction) {
   if (!interaction.inGuild() || !interaction.guild) return;
   const guildId = interaction.guildId;
   const guild = interaction.guild;
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
   const managedRoleIds = new Set(guild.roles.cache.filter((r) => r.managed).map((r) => r.id));
   let deleted = 0;
   for (const role of [...guild.roles.cache.values()]) {

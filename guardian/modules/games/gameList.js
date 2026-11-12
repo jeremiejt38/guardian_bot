@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { getDb, getModerationRoleIds } = require('../../database/db');
 const {
   ChannelType,
@@ -414,7 +415,7 @@ async function handleOpenGameList(interaction, page = 0) {
   await interaction.reply({
     embeds: [embed],
     components: rows,
-    ephemeral: true
+    flags: MessageFlags.Ephemeral
   });
 }
 

@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -109,7 +110,7 @@ async function renderHistorique(interaction, targetUserId, actorId, page) {
     return;
   }
 
-  await interaction.reply({ embeds: [embed], components, ephemeral: true });
+  await interaction.reply({ embeds: [embed], components, flags: MessageFlags.Ephemeral });
 }
 
 async function handleHistoriquePagination(interaction) {

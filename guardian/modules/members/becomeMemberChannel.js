@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -108,7 +109,7 @@ function buildPrerequisitesEphemeral(guildId, record, options) {
     rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
   }
 
-  return { content: lines.join('\n'), components: rows, ephemeral: true };
+  return { content: lines.join('\n'), components: rows, flags: MessageFlags.Ephemeral };
 }
 
 async function handleBecomeMemberInteraction(interaction) {
@@ -167,7 +168,7 @@ async function handleBecomeMemberInteraction(interaction) {
     } else {
       lines.push('❌ You have no sponsor yet.', '', '**How to get sponsored?**', 'Ask a Member, Moderator, Manager or Owner to sponsor you. They can use the `/parrainer` command.');
     }
-    await interaction.reply({ content: lines.join('\n'), ephemeral: true }).catch(() => {});
+    await interaction.reply({ content: lines.join('\n'), flags: MessageFlags.Ephemeral }).catch(() => {});
     return true;
   }
 

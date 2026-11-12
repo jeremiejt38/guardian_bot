@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
 const { buildPremiumLockButton } = require('../modules/tier/premiumGateUI');
 const { buildPremiumInviteURL } = require('../modules/tier/premiumInvite');
@@ -21,7 +22,7 @@ module.exports = {
       if (!inviteUrl) {
         await interaction.reply({
           content: 'Lien d\'invitation premium indisponible. Contacte l\'administrateur.',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
         return;
       }
@@ -33,7 +34,7 @@ module.exports = {
           '',
           '> Utilise ce lien pour ajouter le bot premium à ton serveur Discord.'
         ].join('\n'),
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -57,7 +58,7 @@ module.exports = {
     await interaction.reply({
       embeds: [embed],
       components: [row],
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 };

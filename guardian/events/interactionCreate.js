@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { markReportHandled, handleOpenReportButton, handleReportModalSubmit } = require('../modules/moderation/reports');
 const { handleSlowModeInteraction } = require('../modules/moderation/slowModePanel');
 const { handleBehaviorInteraction } = require('../modules/moderation/behaviorPanel');
@@ -81,7 +82,7 @@ module.exports = {
       const lastUsed = commandCooldowns.get(cooldownKey) ?? 0;
       const now = Date.now();
       if (now - lastUsed < COMMAND_COOLDOWN_MS) {
-        await interaction.reply({ content: '⏳ Please wait a moment before using this command again.', ephemeral: true }).catch(() => {});
+        await interaction.reply({ content: '⏳ Please wait a moment before using this command again.', flags: MessageFlags.Ephemeral }).catch(() => {});
         return;
       }
       commandCooldowns.set(cooldownKey, now);
@@ -138,7 +139,7 @@ module.exports = {
         await performUpdate(interaction);
       } else if (action === 'skip') {
         if (!isBotAdmin(interaction.user.id)) {
-          await interaction.reply({ content: '❌ Tu n\'es pas autorisé.', ephemeral: true }).catch(() => {});
+          await interaction.reply({ content: '❌ Tu n\'es pas autorisé.', flags: MessageFlags.Ephemeral }).catch(() => {});
           return;
         }
         await interaction.deferUpdate().catch(() => {});
@@ -424,7 +425,7 @@ module.exports = {
 
     if (interaction.isButton() && interaction.customId.startsWith('servers:approve:')) {
       if (!memberCanManageServers(interaction)) {
-        await interaction.reply({ content: t(interaction.guildId, 'interaction.forbidden'), ephemeral: true });
+        await interaction.reply({ content: t(interaction.guildId, 'interaction.forbidden'), flags: MessageFlags.Ephemeral });
         return;
       }
       const parts = interaction.customId.split(':');
@@ -458,7 +459,7 @@ module.exports = {
 
     if (interaction.isButton() && interaction.customId.startsWith('servers:reject:')) {
       if (!memberCanManageServers(interaction)) {
-        await interaction.reply({ content: t(interaction.guildId, 'interaction.forbidden'), ephemeral: true });
+        await interaction.reply({ content: t(interaction.guildId, 'interaction.forbidden'), flags: MessageFlags.Ephemeral });
         return;
       }
       const parts = interaction.customId.split(':');
@@ -471,7 +472,7 @@ module.exports = {
 
     if (interaction.isButton() && interaction.customId.startsWith('servers:connect:')) {
       if (!memberCanManageServers(interaction)) {
-        await interaction.reply({ content: t(interaction.guildId, 'interaction.forbidden'), ephemeral: true });
+        await interaction.reply({ content: t(interaction.guildId, 'interaction.forbidden'), flags: MessageFlags.Ephemeral });
         return;
       }
       const parts = interaction.customId.split(':');
@@ -479,19 +480,19 @@ module.exports = {
       const db = getDb();
       const row = db.prepare('SELECT ip, port, password FROM servers_jeu WHERE server_id = ?').get(serverId);
       if (!row) {
-        await interaction.reply({ content: t(interaction.guildId, 'servers.notFound'), ephemeral: true });
+        await interaction.reply({ content: t(interaction.guildId, 'servers.notFound'), flags: MessageFlags.Ephemeral });
         return;
       }
       let pwd = row.password;
       try {
         pwd = decrypt(row.password);
       } catch (e) {}
-      await interaction.reply({ content: t(interaction.guildId, 'servers.connectInfo', { ip: row.ip, port: String(row.port), pwd: pwd || '' }), ephemeral: true });
+      await interaction.reply({ content: t(interaction.guildId, 'servers.connectInfo', { ip: row.ip, port: String(row.port), pwd: pwd || '' }), flags: MessageFlags.Ephemeral });
       return;
     }
 
     if (interaction.isRepliable()) {
-      await interaction.reply({ content: t(interaction.guildId, 'interaction.unsupported'), ephemeral: true });
+      await interaction.reply({ content: t(interaction.guildId, 'interaction.unsupported'), flags: MessageFlags.Ephemeral });
     }
     } catch (err) {
       const handled = await handleInteractionError(interaction, err, `interactionCreate:${interaction.customId ?? interaction.commandName ?? 'unknown'}`);

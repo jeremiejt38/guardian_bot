@@ -171,7 +171,7 @@ async function saveConfigBackup(guild) {
     const encoded = encodeSnapshot(snapshot);
     const content = `${BACKUP_MARKER}\n\`\`\`\n${encoded}\n\`\`\`\n-# Sauvegarde automatique Guardian — ${snapshot._ts}`;
 
-    const pinned = await channel.messages.fetchPinned(true).catch(() => null);
+    const pinned = await channel.messages.fetchPins().catch(() => null);
     const existing = pinned?.find((m) => m.content.includes(BACKUP_MARKER) && m.author.id === guild.client?.user?.id);
 
     if (existing) {

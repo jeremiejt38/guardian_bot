@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -323,7 +324,7 @@ async function handleGameSelectPage(interaction, baseCustomId, placeholder) {
     await interaction.reply({
       content: 'Quel jeu souhaitez-vous modifier ?',
       components: buildPaginatedGameSelect(games, IDS.selectEdit, 'Choisir un jeu…', 0),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }
@@ -339,7 +340,7 @@ async function handleGameSelectPage(interaction, baseCustomId, placeholder) {
     await interaction.reply({
       content: `**${game.name}** — que souhaitez-vous modifier ?`,
       components: buildGameEditRows(gameId, game),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }
@@ -358,7 +359,7 @@ async function handleGameSelectPage(interaction, baseCustomId, placeholder) {
     await interaction.reply({
       content: buildLinkContent(game, gameLinkStates.get(key), interaction.guild),
       components: buildLinkComponents(interaction, game, gameLinkStates.get(key), 0),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }
@@ -557,7 +558,7 @@ async function handleGameSelectPage(interaction, baseCustomId, placeholder) {
     await interaction.reply({
       content: 'Quel jeu souhaitez-vous supprimer ?',
       components: buildPaginatedGameSelect(games, IDS.selectDelete, 'Choisir un jeu…', 0),
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }
@@ -575,7 +576,7 @@ async function handleGameSelectPage(interaction, baseCustomId, placeholder) {
       components: [new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`${IDS.confirmDelete}${gameId}`).setLabel('🗑️ Confirmer suppression').setStyle(ButtonStyle.Danger)
       )],
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return true;
   }

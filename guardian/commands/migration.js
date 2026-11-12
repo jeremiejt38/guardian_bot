@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { exportGuildData, encodeSnapshot, decodeSnapshot } = require('../modules/migration/guildExport');
 const { importGuildData, validateSnapshot } = require('../modules/migration/guildImport');
@@ -20,7 +21,7 @@ module.exports = {
 
   async execute(interaction) {
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({ content: 'Cette commande est réservée aux administrateurs.', ephemeral: true });
+      await interaction.reply({ content: 'Cette commande est réservée aux administrateurs.', flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -28,7 +29,7 @@ module.exports = {
 
     try {
       if (subcommand === 'exporter') {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const snapshot = exportGuildData(interaction.guildId);
         const encoded = encodeSnapshot(snapshot);
         const buffer = Buffer.from(encoded, 'utf8');
@@ -40,14 +41,14 @@ module.exports = {
       }
 
       if (subcommand === 'importer') {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const raw = interaction.options.getString('snapshot', true).trim();
         let snapshot = decodeSnapshot(raw);
         if (!snapshot) {
           try { snapshot = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')); } catch { snapshot = null; }
         }
         if (!snapshot || !validateSnapshot(snapshot)) {
-          await interaction.editReply({ content: 'Snapshot invalide. Colle le contenu exact du fichier exporté.', ephemeral: true });
+          await interaction.editReply({ content: 'Snapshot invalide. Colle le contenu exact du fichier exporté.', flags: MessageFlags.Ephemeral });
           return;
         }
         const result = importGuildData(snapshot, interaction.guildId, { deleteExisting: true });
@@ -64,12 +65,12 @@ module.exports = {
             summary || 'Aucune donnée',
             '```'
           ].join('\n'),
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
     } catch (err) {
       console.error('[migration command]', err);
-      await interaction.editReply({ content: `Erreur : ${err.message}`, ephemeral: true });
+      await interaction.editReply({ content: `Erreur : ${err.message}`, flags: MessageFlags.Ephemeral });
     }
   }
 };

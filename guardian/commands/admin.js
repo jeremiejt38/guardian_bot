@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder } = require('discord.js');
 const { isBotAdmin } = require('../modules/admin/botUpdater');
 const { openOrRefreshPanel } = require('../modules/admin/adminPanel');
@@ -57,7 +58,7 @@ module.exports = {
 
   async execute(interaction) {
     if (!isBotAdmin(interaction.user.id)) {
-      await interaction.reply({ content: '❌ Accès réservé à l\'administrateur système bot.', ephemeral: true });
+      await interaction.reply({ content: '❌ Accès réservé à l\'administrateur système bot.', flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -78,13 +79,13 @@ module.exports = {
             `✅ **Premium activé** pour le serveur \`${guildId}\``,
             `> Tier : \`premium\` — ${expiryStr}`,
           ].join('\n'),
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       } else {
         deactivatePremium(guildId);
         await interaction.reply({
           content: `✅ **Premium désactivé** pour le serveur \`${guildId}\` — tier : \`free\``,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
       return;
@@ -101,7 +102,7 @@ module.exports = {
           `\`\`\``,
           `Clé générée (${expiryStr}). Tu peux la donner à ton client.`,
         ].join('\n'),
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -109,10 +110,10 @@ module.exports = {
 
     if (sub === 'panel' || !sub) {
       if (interaction.guild) {
-        await interaction.reply({ content: '❌ Cette commande est uniquement disponible en message privé (DM).', ephemeral: true });
+        await interaction.reply({ content: '❌ Cette commande est uniquement disponible en message privé (DM).', flags: MessageFlags.Ephemeral });
         return;
       }
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       await openOrRefreshPanel(interaction.client);
       await interaction.editReply({ content: '✅ Panneau admin ouvert en DM.' });
     }

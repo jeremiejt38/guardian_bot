@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getGuildSetting } = require('../modules/config/settings');
 const { getGradeMappings, ORDERED_GRADES } = require('../modules/initialisation/gradeMapping');
@@ -16,7 +17,7 @@ module.exports = {
 		if (!interaction.member.permissions.has('ManageGuild')) {
 			await interaction.reply({
 				content: 'Vous n\'avez pas la permission de gérer le serveur.',
-				ephemeral: true
+				flags: MessageFlags.Ephemeral
 			});
 			return;
 		}
@@ -25,7 +26,7 @@ module.exports = {
 		if (interaction.user.id === process.env.BOT_ADMIN_ID) {
 			await interaction.reply({
 				content: 'Le bot admin ne peut pas utiliser cette commande.',
-				ephemeral: true
+				flags: MessageFlags.Ephemeral
 			});
 			return;
 		}
@@ -157,7 +158,7 @@ module.exports = {
 
 		await interaction.reply({
 			embeds: [embed],
-			ephemeral: true
+			flags: MessageFlags.Ephemeral
 		});
 	}
 };

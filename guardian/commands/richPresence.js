@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const {
   giveConsent,
@@ -64,7 +65,7 @@ module.exports = {
         giveConsent(guildId, userId);
         await interaction.reply({
           content: `✅ ${t(guildId, 'commands.richPresence.optinSuccess')}`,
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
         return;
       }
@@ -73,7 +74,7 @@ module.exports = {
         revokeConsent(guildId, userId);
         await interaction.reply({
           content: `✅ ${t(guildId, 'commands.richPresence.optoutSuccess')}`,
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
         return;
       }
@@ -82,7 +83,7 @@ module.exports = {
         if (!isConsented(guildId, userId)) {
           await interaction.reply({
             content: t(guildId, 'commands.richPresence.notOptedIn'),
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           return;
         }
@@ -100,7 +101,7 @@ module.exports = {
           embed.addFields({ name: t(guildId, 'commands.richPresence.statsTopGames'), value: lines.join('\n') });
         }
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         return;
       }
 
@@ -149,7 +150,7 @@ module.exports = {
       default:
         await interaction.reply({
           content: 'Sous-commande inconnue.',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
     }
   }

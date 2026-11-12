@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { t, describe } = require('../modules/i18n');
 const { version } = require('../package.json');
@@ -172,12 +173,12 @@ module.exports = {
     if (moduleKey) {
       const embed = buildModuleEmbed(guildId, moduleKey);
       if (!embed) {
-        await interaction.reply({ content: t(guildId, 'help.unknownModule'), ephemeral: true });
+        await interaction.reply({ content: t(guildId, 'help.unknownModule'), flags: MessageFlags.Ephemeral });
         return;
       }
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     } else {
-      await interaction.reply({ embeds: [buildOverviewEmbed(guildId)], ephemeral: true });
+      await interaction.reply({ embeds: [buildOverviewEmbed(guildId)], flags: MessageFlags.Ephemeral });
     }
   }
 };
