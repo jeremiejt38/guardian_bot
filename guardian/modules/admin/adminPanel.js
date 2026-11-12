@@ -1,6 +1,8 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } = require('discord.js');
 const { setConfig, getConfig } = require('../../database/db');
-const { isBotAdmin, getBotAdminId, isRunningUnderPM2 } = require('./botUpdater');
+// Lazy access: botUpdater <-> adminPanel form a require cycle, so
+// destructured exports can be undefined depending on load order.
+const botUpdater = require('./botUpdater');
 const logger = require('../logs/logger');
 const { version } = require('../../package.json');
 const { getRecapStats } = require('./recapStats');
@@ -108,7 +110,7 @@ function buildStatutContent(client) {
       { name: 'Uptime', value: formatUptime(), inline: true },
       { name: 'Ping', value: ping >= 0 ? `${ping}ms` : 'N/A', inline: true },
       { name: 'RAM', value: formatBytes(mem.rss), inline: true },
-      { name: 'PM2', value: isRunningUnderPM2() ? '✅ actif' : '❌ inactif', inline: true },
+      { name: 'PM2', value: botUpdater.isRunningUnderPM2() ? '✅ actif' : '❌ inactif', inline: true },
       { name: 'Node.js', value: process.version, inline: true },
       { name: 'OS', value: `${os.type()} ${os.release()}`, inline: false }
     );
@@ -205,7 +207,7 @@ function cancelTimeout() {
 }
 
 async function getAdminDmChannel(client) {
-  const adminId = getBotAdminId();
+  const adminId = botUpdater.getBotAdminId();
   if (!adminId) return null;
   try {
     const user = await client.users.fetch(adminId);
@@ -260,7 +262,7 @@ async function openOrRefreshPanel(client, view = null) {
 }
 
 async function handlePanelInteraction(interaction, client) {
-  if (!isBotAdmin(interaction.user.id)) {
+  if (!botUpdater.isBotAdmin(interaction.user.id)) {
     await interaction.reply({ content: '❌ Accès réservé à l\'administrateur bot.', ephemeral: true }).catch(() => {});
     return true;
   }

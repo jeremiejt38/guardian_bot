@@ -2,7 +2,9 @@ const { execFile } = require('child_process');
 const path = require('path');
 const logger = require('../logs/logger');
 const { setConfig, getConfig } = require('../../database/db');
-const { sendAdminDmMessage } = require('./adminPanel');
+// Lazy access: botUpdater <-> adminPanel form a require cycle, so
+// destructured exports can be undefined depending on load order.
+const adminPanel = require('./adminPanel');
 
 const GLOBAL = '__global__';
 const ROOT_DIR = path.resolve(__dirname, '../../');
@@ -197,7 +199,7 @@ async function notifyBotAdminUpdate(client, fromVersion, toVersion) {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await sendAdminDmMessage(client, { content: msg, components: [row] });
+    await adminPanel.sendAdminDmMessage(client, { content: msg, components: [row] });
     logger.info(`botUpdater: notification MAJ envoyée à BOT_ADMIN_ID=${adminId}`);
   } catch (err) {
     logger.error('botUpdater: erreur notification admin', err);
