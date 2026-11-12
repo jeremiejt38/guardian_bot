@@ -1,25 +1,14 @@
 const { execFile } = require('child_process');
 const path = require('path');
 const logger = require('../logs/logger');
-const { setConfig, getConfig } = require('../../database/db');
-const { sendAdminDmMessage } = require('./adminPanel');
+const { getConfig } = require('../../database/db');
+const { getBotAdminId, setBotAdminId, isBotAdmin, isRunningUnderPM2 } = require('./adminUtils');
+// Call-site require only: adminPanel <-> botUpdater form a require cycle;
+// requiring './adminPanel' at top level captures a stale exports object.
+const adminPanel = () => require('./adminPanel');
 
 const GLOBAL = '__global__';
 const ROOT_DIR = path.resolve(__dirname, '../../');
-
-function getBotAdminId() {
-  return process.env.BOT_ADMIN_ID || getConfig(GLOBAL, 'admin', 'bot_admin_id', null);
-}
-
-function setBotAdminId(id) {
-  setConfig(GLOBAL, 'admin', 'bot_admin_id', id);
-}
-
-function isBotAdmin(userId) {
-  const id = getBotAdminId();
-  if (!id) return false;
-  return userId === id;
-}
 
 async function bootstrapAdminIfNeeded(client, guilds) {
   if (getBotAdminId()) return;
@@ -66,9 +55,6 @@ async function bootstrapAdminIfNeeded(client, guilds) {
   }
 }
 
-function isRunningUnderPM2() {
-  return Boolean(process.env.PM2_HOME || process.env.pm_id !== undefined);
-}
 
 const GITHUB_REPO = process.env.GITHUB_FREE_REPO ?? 'jeremiejt38/Guardian_Discord_Bot_Free';
 
@@ -197,7 +183,7 @@ async function notifyBotAdminUpdate(client, fromVersion, toVersion) {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await sendAdminDmMessage(client, { content: msg, components: [row] });
+    await adminPanel().sendAdminDmMessage(client, { content: msg, components: [row] });
     logger.info(`botUpdater: notification MAJ envoyée à BOT_ADMIN_ID=${adminId}`);
   } catch (err) {
     logger.error('botUpdater: erreur notification admin', err);

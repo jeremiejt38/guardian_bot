@@ -179,3 +179,6 @@ vite.config.ts.timestamp-*
 .aider*
 :memory:
 screenlog.0
+data/*.db
+data/*.db-shm
+data/*.db-wal

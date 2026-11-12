@@ -1,6 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } = require('discord.js');
 const { setConfig, getConfig } = require('../../database/db');
-const { isBotAdmin, getBotAdminId, isRunningUnderPM2 } = require('./botUpdater');
+const { isBotAdmin, getBotAdminId, isRunningUnderPM2 } = require('./adminUtils');
 const logger = require('../logs/logger');
 const { version } = require('../../package.json');
 const { getRecapStats } = require('./recapStats');
@@ -250,7 +250,11 @@ async function openOrRefreshPanel(client, view = null) {
 
     return msg;
   } catch (err) {
-    logger.error('adminPanel: openOrRefreshPanel error', err);
+    if (err && err.code === 50278) {
+      logger.warn('adminPanel: bot admin has no mutual guild with this bot — panel skipped');
+    } else {
+      logger.error('adminPanel: openOrRefreshPanel error', err);
+    }
     return null;
   }
 }
