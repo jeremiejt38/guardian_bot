@@ -129,3 +129,7 @@ premiumGate.js
 - **Regen score passif** : toutes les heures
 - **Server monitor** (TCP ping) : configurable
 - **Steam changelog** : premium, quotidien
+
+---
+
+The lowercase `docs/architecture.md` file is retained as detailed per-module documentation (premium annotation scheme, free-bundle build via `scripts/build-free.js`, required intents); this file is the canonical architecture source.
