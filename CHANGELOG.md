@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.14](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.13...v0.30.14) (2026-11-13)
+
+
+### Features
+
+* **servers:** hide connection info behind Discord spoilers ([63f4ff3](https://github.com/jeremiejt38/guardian_bot/commit/63f4ff3b5c2ff5fa74d99a1b3d36c75af0eeeddc))
+* **servers:** spoiler connection info in server list ([7481974](https://github.com/jeremiejt38/guardian_bot/commit/7481974a6d20b05503b0f088f25462f8b74b2304))
+
 ## [0.30.13](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.12...v0.30.13) (2026-11-13)
 
 
