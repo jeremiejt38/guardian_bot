@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.22](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.21...v0.30.22) (2026-11-13)
+
+
+### Features
+
+* **servers:** compact one-line entries in member list ([f96407d](https://github.com/jeremiejt38/guardian_bot/commit/f96407da88189031555e8779a7bdb12f84fb9284))
+* **servers:** one-line member list entries ([2c2343e](https://github.com/jeremiejt38/guardian_bot/commit/2c2343ec8a462a3205c58adf02bbc7fc867171a2))
+
 ## [0.30.21](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.20...v0.30.21) (2026-11-13)
 
 
