@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.20](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.19...v0.30.20) (2026-11-13)
+
+
+### Bug Fixes
+
+* **servers:** immediate feedback when a member starts a server ([e05517f](https://github.com/jeremiejt38/guardian_bot/commit/e05517f7dc5534f784ae923bde02687c73c07d4b))
+* **servers:** instant starting feedback on member Start button ([43964d7](https://github.com/jeremiejt38/guardian_bot/commit/43964d7fcb1847d6e911253116d5ae155f6bc3a9))
+
 ## [0.30.19](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.18...v0.30.19) (2026-11-13)
 
 
