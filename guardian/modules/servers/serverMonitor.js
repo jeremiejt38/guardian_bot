@@ -127,8 +127,10 @@ async function monitorServers(client) {
 
     const statusChannel = await resolveServerListChannel(guild);
 
+    let statusChanged = false;
     for (const server of guildServers) {
       const status = await checkTcpServer(server.ip, Number(server.port));
+      if (server.last_status !== status) statusChanged = true;
       db.prepare('UPDATE servers_jeu SET last_status = ?, last_check = ? WHERE server_id = ?').run(status, now, server.server_id);
 
       if (!statusChannel) {
@@ -138,6 +140,13 @@ async function monitorServers(client) {
       await upsertStatusMessage(statusChannel, server, status, now).catch((error) => {
         logger.error(`Failed status message update for server_id=${server.server_id}`, error);
       });
+    }
+
+    // La liste membre se re-rend dès qu'un serveur change d'état,
+    // que le changement vienne d'un bouton Discord ou de l'extérieur.
+    if (statusChanged) {
+      const { refreshServerListPanel } = require('../config/serveursJeuPanel');
+      await refreshServerListPanel(guild).catch((e) => logger.warn(`Guild ${guildId}: auto-refresh liste-serveurs failed: ${e.message}`));
     }
 
     runTracker.markRun(guildId, nowMs);
