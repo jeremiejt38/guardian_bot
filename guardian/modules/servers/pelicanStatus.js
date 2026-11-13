@@ -97,7 +97,8 @@ async function handlePelicanButton(interaction) {
   const [, signal, identifier] = parts;
   if (!pelican.VALID_SIGNALS.has(signal)) return false;
 
-  if (!canControl(interaction.member)) {
+  // 'start' est ouvert aux membres ; stop/restart/kill restent réservés modos+.
+  if (signal !== 'start' && !canControl(interaction.member)) {
     await interaction.reply({ content: '🔒 Actions réservées aux managers+.', ephemeral: true });
     return true;
   }

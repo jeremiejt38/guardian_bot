@@ -340,6 +340,14 @@ const MIGRATIONS = [
       if (!cols.includes('forum_enabled'))        conn.exec('ALTER TABLE servers_jeu ADD COLUMN forum_enabled INTEGER NOT NULL DEFAULT 0');
     }
   },
+  {
+    version: 13,
+    description: 'servers_jeu: pelican_identifier for power actions',
+    up(conn) {
+      const cols = conn.prepare('PRAGMA table_info(servers_jeu)').all().map((c) => c.name);
+      if (!cols.includes('pelican_identifier')) conn.exec('ALTER TABLE servers_jeu ADD COLUMN pelican_identifier TEXT');
+    }
+  },
   // @premium-start
   {
     version: 12,

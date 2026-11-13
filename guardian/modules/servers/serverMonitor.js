@@ -58,6 +58,19 @@ function buildServerEmbed(server, status, checkedAtIso) {
     ].join('\n'));
 }
 
+function buildPowerComponents(server) {
+  // Bouton ▶️ visible par les membres : démarre un serveur arrêté via Pelican.
+  if (!server.pelican_identifier) return [];
+  const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+  return [new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`pelican:start:${server.pelican_identifier}`)
+      .setLabel('▶️ Démarrer')
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(server.last_status === 'online')
+  )];
+}
+
 async function upsertStatusMessage(channel, server, status, checkedAtIso) {
   const db = getDb();
   const embed = buildServerEmbed(server, status, checkedAtIso);
@@ -65,21 +78,22 @@ async function upsertStatusMessage(channel, server, status, checkedAtIso) {
   if (server.status_message_id) {
     const existing = await channel.messages.fetch(server.status_message_id).catch(() => null);
     if (existing) {
-      await existing.edit({ embeds: [embed] });
+      await existing.edit({ embeds: [embed], components: buildPowerComponents(server) });
       return;
     }
 
     logger.warn(`Status message not found for server_id=${server.server_id}, creating a new one`);
   }
 
-  const created = await channel.send({ embeds: [embed] });
+  const components = buildPowerComponents(server);
+  const created = await channel.send({ embeds: [embed], components });
   db.prepare('UPDATE servers_jeu SET status_message_id = ? WHERE server_id = ?').run(created.id, server.server_id);
 }
 
 async function monitorServers(client) {
   const db = getDb();
   const servers = db
-    .prepare('SELECT server_id, guild_id, name, game, ip, port, status_message_id FROM servers_jeu')
+    .prepare('SELECT server_id, guild_id, name, game, ip, port, status_message_id, pelican_identifier FROM servers_jeu')
     .all();
   const now = new Date().toISOString();
 
