@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.17](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.16...v0.30.17) (2026-11-13)
+
+
+### Features
+
+* **servers:** gate connection info on online status in member list ([50bdafd](https://github.com/jeremiejt38/guardian_bot/commit/50bdafd783491328bce6e64732bc20c394b09292))
+* **servers:** status-gated member list rendering ([2d25e6a](https://github.com/jeremiejt38/guardian_bot/commit/2d25e6acf44f639ea97ca03f9c2d251267ef7759))
+
 ## [0.30.16](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.15...v0.30.16) (2026-11-13)
 
 
