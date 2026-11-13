@@ -34,9 +34,10 @@ const get = (p) => fetch(`${API}${p}`, { headers: { Authorization: `Bot ${token}
 
 // Attendus post-install (les noms exacts sont lus depuis le code au besoin).
 const EXPECTED_CHANNELS = [
-  'guardian',           // catégorie principale
-  'guardian-config',    // salon config caché
+  'guardian-setup',     // catégorie principale créée par le wizard
+  'guardian',           // salon principal
   'guardian-logs',      // salon logs
+  'guardian-backup',    // salon backups config
 ];
 
 const results = [];
