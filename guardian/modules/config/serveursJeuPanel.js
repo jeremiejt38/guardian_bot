@@ -161,10 +161,12 @@ async function refreshServerListPanel(guild) {
     if (online) {
       const players = await queryPlayers(s.ip, s.port).catch(() => null);
       parts.push(`👥 ${players ? `${players.players}${players.max != null ? '/' + players.max : ''}` : 'n/a'}`);
-      parts.push(`||\`${s.ip}:${s.port}\`||`);
-      if (s.password) parts.push(`🔑 ||${s.password}||`);
     }
-    const content = parts.join(' • ');
+    let content = parts.join(' • ');
+    if (online) {
+      content += `\n> ||\`${s.ip}:${s.port}\`||`;
+      if (s.password) content += ` • 🔑 ||${s.password}||`;
+    }
     const row = new ActionRowBuilder();
     if (!online && s.pelican_identifier) {
       row.addComponents(new ButtonBuilder()
