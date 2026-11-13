@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.31](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.30...v0.30.31) (2026-11-13)
+
+
+### Features
+
+* **servers:** prefer egg update.log for update detection ([ea89fc8](https://github.com/jeremiejt38/guardian_bot/commit/ea89fc86b6f396252ae55d66233298ee4a85ebc4))
+* **servers:** use egg update.log for update check ([5579176](https://github.com/jeremiejt38/guardian_bot/commit/5579176b4d5d0d75f81f6984266820c25fdddcd3))
+
 ## [0.30.30](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.29...v0.30.30) (2026-11-13)
 
 
