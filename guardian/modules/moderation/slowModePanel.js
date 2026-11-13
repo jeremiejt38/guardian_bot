@@ -99,11 +99,13 @@ async function seedSlowModePanel(guild) {
   if (!channel) return;
 
   const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
-  const panel = messages?.find(
-    (m) => m.author.id === guild.client.user.id &&
-      m.components.length > 0 &&
-      m.components[0]?.components?.[0]?.customId === IDS.panel
-  );
+  const isPanel = (m) => m.author.id === guild.client.user.id &&
+    m.components.some((row) => row.components?.some((c) => c.customId === IDS.panel));
+  const panels = messages?.filter(isPanel) ?? new Map();
+  // Ne garder que le panel le plus récent, supprimer les doublons historiques.
+  const sorted = [...panels.values()].sort((a, b) => b.createdTimestamp - a.createdTimestamp);
+  const panel = sorted[0];
+  for (const dup of sorted.slice(1)) await dup.delete().catch(() => undefined);
 
   const guildId = guild.id;
   const selectRows = buildChannelSelectMenu(guild, guildId, 0);
