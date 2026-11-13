@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.30.12](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.11...v0.30.12) (2026-11-13)
+
+
+### Features
+
+* **servers:** Pelican panel status channel with power buttons (premium) ([566ce49](https://github.com/jeremiejt38/guardian_bot/commit/566ce491e8ff3d545a5e753daeb1db3cc8279b6b))
+* **servers:** Pelican status channel + power buttons (premium) ([3a1592a](https://github.com/jeremiejt38/guardian_bot/commit/3a1592aee8dca9f490335ad1a2205a1d5c6c00c5))
+
+
+### Bug Fixes
+
+* **admin:** duplicated MessageFlags import crashes boot ([19d2ffe](https://github.com/jeremiejt38/guardian_bot/commit/19d2ffeab09db9581ebd86cc1230012e9ee425da))
+* **admin:** remove duplicated MessageFlags import ([502793a](https://github.com/jeremiejt38/guardian_bot/commit/502793acdc7961cf6168a6f75fc5431e170e940a))
+* **build:** repair free bundle stripping + CI coverage ([8748813](https://github.com/jeremiejt38/guardian_bot/commit/87488130f49f964d9daf6d2fe862ff76f0dcd8b0))
+* **build:** repair free bundle stripping and add CI ([afdca10](https://github.com/jeremiejt38/guardian_bot/commit/afdca10a01f4d9ad10063aae6bbc0daa3980ab05))
+* **ci:** extract issue-creation script from workflow YAML ([e6689ed](https://github.com/jeremiejt38/guardian_bot/commit/e6689ed0732b006e5d80d3af0dfb28540d9d45e4))
+* **ci:** stop 'workflow file issue' failure emails on every push ([bf6af0d](https://github.com/jeremiejt38/guardian_bot/commit/bf6af0dc585ff61cd34062248807c0f33ccd9955))
+* **config:** adapt config backup to fetchPins() items shape ([1f57dd4](https://github.com/jeremiejt38/guardian_bot/commit/1f57dd4b4723b9b6d3d70e3b96cf403d122ab788))
+* **config:** fetchPins() items shape in config backup ([b0706bf](https://github.com/jeremiejt38/guardian_bot/commit/b0706bf6b925e88616b5ca1587197314d2b43e76))
+* **core:** add in-flight guards on interval tasks, graceful shutdown, busy_timeout ([77b8ad8](https://github.com/jeremiejt38/guardian_bot/commit/77b8ad85020799ee0ce3651bda37d4a3f8fd7ece))
+* **core:** interval guards + graceful shutdown + busy_timeout ([79882a0](https://github.com/jeremiejt38/guardian_bot/commit/79882a0b83d321b9e0080ca9a532dbe0b7b5ca46))
+* **db:** purge guild data on guildDelete ([3863844](https://github.com/jeremiejt38/guardian_bot/commit/3863844045f8c47b81ef344934962b663ca0a454))
+* **db:** purge guild data when the bot is removed ([72b4981](https://github.com/jeremiejt38/guardian_bot/commit/72b498108a3b8b58506bb1e3e5ede74127ddf818))
+* **deploy:** add health check, auto-rollback and SHA denylist to auto-update ([165c131](https://github.com/jeremiejt38/guardian_bot/commit/165c13147aa4555256c13010b04e78f2585e2111))
+* **deploy:** auto-update health check + rollback ([3c81844](https://github.com/jeremiejt38/guardian_bot/commit/3c8184450369be45e07b9b01a6949c8d10db9d2f))
+* **deploy:** auto-update targets beta, prod goes manual ([5d4366b](https://github.com/jeremiejt38/guardian_bot/commit/5d4366beadf227c639e3f7b8997aa0a2db659f30))
+* **deploy:** compare HEAD to origin/beta, not the stale local beta ref ([5637b36](https://github.com/jeremiejt38/guardian_bot/commit/5637b36072e4c93febdcfa01cc1943260c684e61))
+* **deploy:** stop 5-min redeploy loop (stale beta ref) ([9e1bde4](https://github.com/jeremiejt38/guardian_bot/commit/9e1bde46f0e707b955e342ac3d81fcb60e58de95))
+* **deploy:** target auto-update script at the beta environment ([c0012aa](https://github.com/jeremiejt38/guardian_bot/commit/c0012aab96934069773e284d75ed07d09fe2f5aa))
+* **ready:** purge guild rows for guilds the bot is no longer in ([21b998d](https://github.com/jeremiejt38/guardian_bot/commit/21b998dfd9fee1da61161f67aa8d66548cc24d4f))
+* **ready:** purge stale guild data on boot ([99334e7](https://github.com/jeremiejt38/guardian_bot/commit/99334e717d2e910bf8b5fa38be37b11b76423a93))
+
 ## [0.30.11](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.10...v0.30.11) (2026-11-12)
 
 
