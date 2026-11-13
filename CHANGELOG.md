@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.34](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.33...v0.30.34) (2026-11-13)
+
+
+### Bug Fixes
+
+* **panels:** re-render existing panels on seed ([31563cc](https://github.com/jeremiejt38/guardian_bot/commit/31563ccd48ff4a21094d47ae9651c71cbf47c035))
+* **panels:** re-render existing panels on seed ([f780010](https://github.com/jeremiejt38/guardian_bot/commit/f780010ee79da733d034b52c80240b09871acb6f))
+
 ## [0.30.33](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.32...v0.30.33) (2026-11-13)
 
 
