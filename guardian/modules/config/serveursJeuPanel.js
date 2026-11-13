@@ -220,17 +220,22 @@ async function handleServeursJeuInteraction(interaction) {
     const serverId = Number(customId.slice('servers:checkupdate:'.length));
     const server = getDb().prepare('SELECT * FROM servers_jeu WHERE server_id = ?').get(serverId);
     if (!server) { await replyEphemeral(interaction, '❌ Serveur introuvable.'); return true; }
-    const players = await queryPlayers(server.ip, server.port).catch(() => null);
-    const count = players ? players.players : 0;
-    if (count > 0) {
-      await replyEphemeral(interaction, `⛔ ${count} joueur(s) connecté(s) — tant que des joueurs sont connectés, vous ne pouvez pas lancer le redémarrage/mise à jour du serveur.`);
-      return true;
+    // Le bouton affiche un état de chargement pendant la vérification.
+    await interaction.deferUpdate().catch(() => {});
+    const { checkSteamUpdate } = require('../servers/updateCheck');
+    const res = server.pelican_identifier
+      ? await checkSteamUpdate(server.pelican_identifier).catch((e) => { logger.warn(`UpdateCheck failed ${server.pelican_identifier}: ${e.message}`); return null; })
+      : null;
+    if (res === null) {
+      await interaction.followUp({ content: 'ℹ️ Vérification de mise à jour non disponible pour ce serveur (jeu non-Steam ou manifeste introuvable).', ephemeral: true }).catch(() => {});
+    } else if (res.update) {
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`servers:doupdate:${serverId}`).setLabel('🔄 Mettre à jour').setStyle(ButtonStyle.Danger)
+      );
+      await interaction.followUp({ content: `🆕 **Mise à jour disponible** pour **${server.name}** (build ${res.installed} → ${res.latest}).`, components: [row], ephemeral: true }).catch(() => {});
+    } else {
+      await interaction.followUp({ content: `✅ **${server.name}** est à jour (build ${res.installed}).`, ephemeral: true }).catch(() => {});
     }
-    // Aucun joueur -> bouton Mettre à jour disponible (redémarrage applique les MAJ au boot).
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(`servers:doupdate:${serverId}`).setLabel('🔄 Mettre à jour').setStyle(ButtonStyle.Danger)
-    );
-    await interaction.reply({ content: '✅ Aucun joueur connecté — une mise à jour peut être appliquée (redémarrage du serveur).', components: [row], ephemeral: true });
     return true;
   }
 

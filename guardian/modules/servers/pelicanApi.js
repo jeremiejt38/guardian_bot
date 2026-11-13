@@ -36,6 +36,16 @@ const getResources = (identifier) =>
   req(`/api/client/servers/${identifier}/resources`, { key: CLIENT_KEY() })
     .then((d) => d?.attributes || {});
 
+const listFiles = (identifier, dir = '/') =>
+  req(`/api/client/servers/${identifier}/files/list?directory=${encodeURIComponent(dir)}`, { key: CLIENT_KEY() })
+    .then((d) => d?.data || []);
+
+const getFileContents = (identifier, file) =>
+  fetch(`${BASE()}/api/client/servers/${identifier}/files/contents?file=${encodeURIComponent(file)}`, {
+    headers: { Authorization: `Bearer ${CLIENT_KEY()}`, Accept: 'text/plain' },
+    signal: AbortSignal.timeout(8000),
+  }).then((r) => (r.ok ? r.text() : null));
+
 const power = (identifier, signal) =>
   req(`/api/client/servers/${identifier}/power`, {
     key: CLIENT_KEY(), method: 'POST', body: { signal },
@@ -43,4 +53,4 @@ const power = (identifier, signal) =>
 
 const VALID_SIGNALS = new Set(['start', 'stop', 'restart', 'kill']);
 
-module.exports = { isConfigured, listServers, getResources, power, VALID_SIGNALS };
+module.exports = { isConfigured, listServers, getResources, listFiles, getFileContents, power, VALID_SIGNALS };
