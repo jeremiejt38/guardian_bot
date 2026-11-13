@@ -4,8 +4,20 @@
 const pelican = require('./pelicanApi');
 const logger = require('../logs/logger');
 
-// Retourne { update: bool, appid } ou null si vérif impossible (jeu non-Steam, fichier absent…).
+// Source 1 — l'update manager de l'egg log 'Installed version: X, latest public patch: Y' dans /update.log.
+async function checkUpdateLog(identifier) {
+  const raw = await pelican.getFileContents(identifier, '/update.log').catch(() => null);
+  if (!raw) return null;
+  const last = [...raw.matchAll(/Installed version:\s*([^,]+),\s*latest public patch:\s*(\S+)/g)].pop();
+  if (!last) return null;
+  const [, installed, latest] = last;
+  return { update: installed.trim() !== latest.trim(), appid: null, installed: installed.trim(), latest: latest.trim() };
+}
+
+// Retourne { update: bool, installed, latest } ou null si vérif impossible (jeu non-Steam, fichier absent…).
 async function checkSteamUpdate(identifier) {
+  const viaLog = await checkUpdateLog(identifier);
+  if (viaLog) return viaLog;
   const files = await pelican.listFiles(identifier, '/steamapps').catch(() => []);
   const manifest = files.find((f) => /appmanifest_\d+\.acf$/.test(f?.attributes?.name || ''));
   if (!manifest) return null;
