@@ -1,0 +1,57 @@
+name: Free Bundle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, beta ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  free-bundle:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build free bundle
+        run: node scripts/build-free.js
+      - name: No premium markers left in bundle JS
+        run: |
+          if grep -rln "@premium" dist/guardian-free --include="*.js" | grep -q .; then
+            echo "@premium markers leaked into the free bundle:"
+            grep -rln "@premium" dist/guardian-free --include="*.js"
+            exit 1
+          fi
+      - name: Bundle syntax check
+        run: |
+          find dist/guardian-free -name "*.js" -not -path "*/node_modules/*" -print0 \
+            | xargs -0 -n1 node --check
+      - name: Test env for bundle
+        run: cp guardian/.env.example dist/.env
+      - name: Install and test bundle
+        working-directory: dist/guardian-free
+        run: |
+          npm ci
+          npm test
+
+  coverage:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: guardian
+        run: npm ci
+      - name: Copy test env
+        run: cp guardian/.env.example guardian/.env || true
+      - name: Tests with coverage report
+        working-directory: guardian
+        run: node --test --experimental-test-coverage tests/ 2>&1 | tail -40
