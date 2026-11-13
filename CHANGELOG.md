@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.19](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.18...v0.30.19) (2026-11-13)
+
+
+### Features
+
+* **servers:** group online servers first, sort by game+name ([b1cfc26](https://github.com/jeremiejt38/guardian_bot/commit/b1cfc263c9b0259ebcbce05f124982b8642533c0))
+* **servers:** online-first grouped sort in member list ([fb82814](https://github.com/jeremiejt38/guardian_bot/commit/fb8281498faa0cae3fe1df74e4b7a6453ca6caab))
+
 ## [0.30.18](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.17...v0.30.18) (2026-11-13)
 
 
