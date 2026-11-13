@@ -7,6 +7,7 @@ const { resolveTextChannel } = require('../utils/channels');
 const { createGuildRunTracker } = require('../utils/scheduling');
 const { guardAsync } = require('../utils/intervalGuard');
 const logger = require('../logs/logger');
+const { queryPlayers } = require('./gameQuery');
 
 const runTracker = createGuildRunTracker();
 
@@ -48,38 +49,43 @@ function resolveServerListChannel(guild) {
   });
 }
 
-function buildServerEmbed(server, status, checkedAtIso) {
-  return new EmbedBuilder()
-    .setTitle(`${server.name} (${server.game})`)
-    .setDescription([
-      `IP: ||\`${server.ip}:${server.port}\`||`,
-      ...(server.password ? [`Mot de passe: ||\`${server.password}\`||`] : []),
-      `Statut: ${renderStatus(status)}`,
-      `Dernière vérification: ${new Date(checkedAtIso).toLocaleString('fr-FR')}`
-    ].join('\n'));
+async function buildMemberContent(server, status, checkedAtIso) {
+  const emoji = status === 'online' ? '\u{1F7E2}' : status === 'offline' ? '\u{1F534}' : '\u{1F7E1}';
+  const lines = [`${emoji} **${server.name}** — ${server.game}`, `Statut : ${renderStatus(status)}`];
+  if (status === 'online') {
+    const players = await queryPlayers(server.ip, server.port).catch(() => null);
+    lines.push(`Joueurs : ${players ? `${players.players}${players.max != null ? '/' + players.max : ''}` : 'n/a'}`);
+    lines.push(`Adresse : ||\`${server.ip}:${server.port}\`||`);
+    if (server.password) lines.push(`Mot de passe : ||\`${server.password}\`||`);
+  }
+  lines.push(`Vérifié : ${new Date(checkedAtIso).toLocaleString('fr-FR')}`);
+  return lines.join('\n');
 }
-
 function buildPowerComponents(server) {
-  // Bouton ▶️ visible par les membres : démarre un serveur arrêté via Pelican.
-  if (!server.pelican_identifier) return [];
   const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-  return [new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
+  const row = new ActionRowBuilder();
+  if (server.pelican_identifier && server.last_status !== 'online') {
+    row.addComponents(new ButtonBuilder()
       .setCustomId(`pelican:start:${server.pelican_identifier}`)
       .setLabel('▶️ Démarrer')
-      .setStyle(ButtonStyle.Success)
-      .setDisabled(server.last_status === 'online')
-  )];
+      .setStyle(ButtonStyle.Success));
+  } else if (server.last_status === 'online') {
+    row.addComponents(new ButtonBuilder()
+      .setCustomId(`server:copy:${server.server_id}`)
+      .setLabel('Copier IP')
+      .setStyle(ButtonStyle.Secondary));
+  } else return [];
+  return [row];
 }
 
 async function upsertStatusMessage(channel, server, status, checkedAtIso) {
   const db = getDb();
-  const embed = buildServerEmbed(server, status, checkedAtIso);
+  const content = await buildMemberContent(server, status, checkedAtIso);
 
   if (server.status_message_id) {
     const existing = await channel.messages.fetch(server.status_message_id).catch(() => null);
     if (existing) {
-      await existing.edit({ embeds: [embed], components: buildPowerComponents(server) });
+      await existing.edit({ content, embeds: [], components: buildPowerComponents(server) });
       return;
     }
 
@@ -87,7 +93,7 @@ async function upsertStatusMessage(channel, server, status, checkedAtIso) {
   }
 
   const components = buildPowerComponents(server);
-  const created = await channel.send({ embeds: [embed], components });
+  const created = await channel.send({ content, components });
   db.prepare('UPDATE servers_jeu SET status_message_id = ? WHERE server_id = ?').run(created.id, server.server_id);
 }
 
