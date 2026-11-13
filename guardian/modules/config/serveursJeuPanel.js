@@ -151,15 +151,15 @@ async function refreshServerListPanel(guild) {
     const online = s.last_status === 'online';
     const emoji = online ? '🟢' : s.last_status === 'offline' ? '🔴' : '⚪';
     // Infos de connexion visibles seulement quand le serveur tourne.
-    const lines = [`${emoji} **${s.name}** — ${s.game}`, `> Statut : ${online ? 'en ligne' : 'hors ligne'}`];
-    if (s.description) lines.push(`> _${s.description}_`);
+    const parts = [`${emoji} **${s.name}** — ${s.game}`, online ? 'en ligne' : 'hors ligne'];
+    if (s.description) parts.push(`_${s.description}_`);
     if (online) {
       const players = await queryPlayers(s.ip, s.port).catch(() => null);
-      lines.push(`> Joueurs : ${players ? `${players.players}${players.max != null ? '/' + players.max : ''}` : 'n/a'}`);
-      lines.push(`> IP : ||\`${s.ip}:${s.port}\`||`);
-      if (s.password) lines.push(`> 🔑 Mot de passe : ||${s.password}||`);
+      parts.push(`👥 ${players ? `${players.players}${players.max != null ? '/' + players.max : ''}` : 'n/a'}`);
+      parts.push(`||\`${s.ip}:${s.port}\`||`);
+      if (s.password) parts.push(`🔑 ||${s.password}||`);
     }
-    const content = lines.join('\n');
+    const content = parts.join(' • ');
     const row = new ActionRowBuilder();
     if (!online && s.pelican_identifier) {
       row.addComponents(new ButtonBuilder()
