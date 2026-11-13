@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.16](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.15...v0.30.16) (2026-11-13)
+
+
+### Features
+
+* **servers:** member list shows live info only when online ([a074bd4](https://github.com/jeremiejt38/guardian_bot/commit/a074bd42c3397918c495c52953b8980dc203a81d))
+* **servers:** status-gated connection info + player count ([ef66b87](https://github.com/jeremiejt38/guardian_bot/commit/ef66b87fd9e0b4e26d077ee9c73dbe09b79a85c2))
+
 ## [0.30.15](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.14...v0.30.15) (2026-11-13)
 
 
