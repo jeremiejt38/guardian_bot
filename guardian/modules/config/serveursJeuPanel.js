@@ -149,9 +149,9 @@ async function refreshServerListPanel(guild) {
 
   for (const s of servers) {
     const online = s.last_status === 'online';
-    const emoji = online ? '🟢' : s.last_status === 'offline' ? '🔴' : '⚪';
+    const emoji = online ? '🟢' : s.last_status === 'starting' ? '🟡' : '🔴';
     // Infos de connexion visibles seulement quand le serveur tourne.
-    const parts = [`${emoji} **${s.name}** — ${s.game}`, online ? 'en ligne' : 'hors ligne'];
+    const parts = [`${emoji} **${s.name}** — ${s.game}`, online ? 'en ligne' : s.last_status === 'starting' ? 'démarrage' : 'hors ligne'];
     if (s.description) parts.push(`_${s.description}_`);
     if (online) {
       const players = await queryPlayers(s.ip, s.port).catch(() => null);
