@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.28](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.27...v0.30.28) (2026-11-13)
+
+
+### Bug Fixes
+
+* **servers:** dedicated list_message_id ([2455b20](https://github.com/jeremiejt38/guardian_bot/commit/2455b207133c993f9a52edc62e69cd59a53d7784))
+* **servers:** dedicated list_message_id for member panel ([a0aedf5](https://github.com/jeremiejt38/guardian_bot/commit/a0aedf509f708ff3d7044b4e9443f6e115a88cf4))
+
 ## [0.30.27](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.26...v0.30.27) (2026-11-13)
 
 
