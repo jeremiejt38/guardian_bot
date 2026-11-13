@@ -136,7 +136,7 @@ async function monitorServers(client) {
       if (server.pelican_identifier && pelican.isConfigured()) {
         const r = await pelican.getResources(server.pelican_identifier).catch(() => null);
         const st = r?.current_state;
-        status = st === 'running' ? 'online' : (st === 'starting' || st === 'stopping') ? 'starting' : 'offline';
+        status = st === 'running' ? 'online' : (st === 'starting' || st === 'stopping') ? 'unstable' : 'offline';
       } else {
         status = await checkTcpServer(server.ip, Number(server.port));
       }
