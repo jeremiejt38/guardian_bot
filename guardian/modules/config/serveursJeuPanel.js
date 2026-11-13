@@ -173,9 +173,9 @@ async function refreshServerListPanel(guild) {
         .setStyle(ButtonStyle.Success));
     } else if (online) {
       row.addComponents(new ButtonBuilder()
-        .setCustomId(`server:copy:${s.server_id}`)
-        .setLabel('Copier IP')
-        .setStyle(ButtonStyle.Secondary));
+        .setCustomId(`servers:checkupdate:${s.server_id}`)
+        .setLabel('🔍 Vérifier MAJ')
+        .setStyle(ButtonStyle.Primary));
     }
     await channel.send({ content, components: row.components.length ? [row] : [] }).catch((e) => logger.warn(`Guild ${guildId}: liste-serveurs entry failed: ${e.message}`));
   }
@@ -184,6 +184,46 @@ async function refreshServerListPanel(guild) {
 
 async function handleServeursJeuInteraction(interaction) {
   const { customId, guildId } = interaction;
+
+  if (interaction.isButton() && customId?.startsWith('servers:checkupdate:')) {
+    const serverId = Number(customId.slice('servers:checkupdate:'.length));
+    const server = getDb().prepare('SELECT * FROM servers_jeu WHERE server_id = ?').get(serverId);
+    if (!server) { await replyEphemeral(interaction, '❌ Serveur introuvable.'); return true; }
+    const players = await queryPlayers(server.ip, server.port).catch(() => null);
+    const count = players ? players.players : 0;
+    if (count > 0) {
+      await replyEphemeral(interaction, `⛔ ${count} joueur(s) connecté(s) — tant que des joueurs sont connectés, vous ne pouvez pas lancer le redémarrage/mise à jour du serveur.`);
+      return true;
+    }
+    // Aucun joueur -> bouton Mettre à jour disponible (redémarrage applique les MAJ au boot).
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`servers:doupdate:${serverId}`).setLabel('🔄 Mettre à jour').setStyle(ButtonStyle.Danger)
+    );
+    await interaction.reply({ content: '✅ Aucun joueur connecté — une mise à jour peut être appliquée (redémarrage du serveur).', components: [row], ephemeral: true });
+    return true;
+  }
+
+  if (interaction.isButton() && customId?.startsWith('servers:doupdate:')) {
+    const serverId = Number(customId.slice('servers:doupdate:'.length));
+    const server = getDb().prepare('SELECT * FROM servers_jeu WHERE server_id = ?').get(serverId);
+    if (!server) { await replyEphemeral(interaction, '❌ Serveur introuvable.'); return true; }
+    const players = await queryPlayers(server.ip, server.port).catch(() => null);
+    if (players && players.players > 0) {
+      await interaction.update({ content: `⛔ ${players.players} joueur(s) connecté(s) — mise à jour impossible tant que des joueurs sont connectés.`, components: [] });
+      return true;
+    }
+    if (!server.pelican_identifier) { await interaction.update({ content: '❌ Serveur non lié à Pelican.', components: [] }); return true; }
+    await interaction.update({ content: '⏳ Redémarrage pour mise à jour en cours…', components: [] });
+    const pelican = require('../servers/pelicanApi');
+    try {
+      await pelican.power(server.pelican_identifier, 'restart');
+      logger.info(`Guild ${guildId}: update-restart ${server.pelican_identifier} by ${interaction.user.id}`);
+    } catch (e) {
+      logger.error(`Guild ${guildId}: update-restart failed`, e);
+      await interaction.followUp({ content: '❌ Échec du redémarrage.', ephemeral: true }).catch(() => {});
+    }
+    return true;
+  }
 
   if (interaction.isButton() && customId?.startsWith('server:copy:')) {
     const serverId = Number(customId.slice('server:copy:'.length));
