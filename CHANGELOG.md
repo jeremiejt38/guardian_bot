@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.13](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.12...v0.30.13) (2026-11-13)
+
+
+### Features
+
+* **servers:** member start button on liste-serveurs via Pelican ([474b283](https://github.com/jeremiejt38/guardian_bot/commit/474b283f8ef00b70a05fbe7de7aae7752b584d52))
+* **servers:** member start button on server list via Pelican ([620139a](https://github.com/jeremiejt38/guardian_bot/commit/620139ae976d80d661d7ad47a9cfaf1db55728bf))
+
 ## [0.30.12](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.11...v0.30.12) (2026-11-13)
 
 
