@@ -6,6 +6,7 @@ const pelican = require('./pelicanApi');
 const { getGuildSetting, setGuildSetting } = require('../config/settings');
 const { getModerationRoleIds } = require('../../database/db');
 const { isPremiumFeatureEnabled } = require('../tier/premiumGateUI');
+const { getDb } = require('../../database/db');
 
 const CHANNEL_NAME = 'serveurs-status';
 const CUSTOM_ID_PREFIX = 'pelican';
@@ -106,12 +107,27 @@ async function handlePelicanButton(interaction) {
   try {
     await pelican.power(identifier, signal);
     logger.info(`Pelican power ${signal} on ${identifier} by ${interaction.user.id}`);
+    // Feedback immédiat : le message cliqué passe en "démarrage en cours".
+    const row = getDb().prepare('SELECT name FROM servers_jeu WHERE pelican_identifier = ?').get(identifier);
+    const label = { start: 'démarrage', restart: 'redémarrage', stop: 'arrêt', kill: 'arrêt forcé' }[signal] || signal;
+    await interaction.message.edit({
+      content: `⏳ **${row?.name || identifier}** — ${label} en cours…`,
+      embeds: [], components: [],
+    }).catch(() => {});
+    await interaction.followUp({ content: `⏳ ${label} envoyé — le statut se mettra à jour sous ~1 min.`, ephemeral: true }).catch(() => {});
   } catch (err) {
     logger.error(`Pelican power ${signal} failed`, err);
     await interaction.followUp({ content: `❌ Échec de l'action ${signal}.`, ephemeral: true }).catch(() => {});
   }
+  // Rafraîchit l'embed admin ET la liste membre après l'action.
   setTimeout(() => refreshStatusMessage(interaction.guild).catch(() => {}), 4000);
+  setTimeout(() => refreshMemberList(interaction.guild).catch(() => {}), 8000);
   return true;
+}
+
+async function refreshMemberList(guild) {
+  const { refreshServerListPanel } = require('../config/serveursJeuPanel');
+  return refreshServerListPanel(guild);
 }
 
 function startPelicanStatusLoop(client, guardAsync) {
