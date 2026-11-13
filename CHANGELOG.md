@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.30.26](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.25...v0.30.26) (2026-11-13)
+
+
+### Features
+
+* **servers:** connection info on dedicated second line ([be91f09](https://github.com/jeremiejt38/guardian_bot/commit/be91f097d8ad26800ee6fe88b19b3755663c0586))
+* **servers:** IP/password on second line ([e29fd8f](https://github.com/jeremiejt38/guardian_bot/commit/e29fd8f6703ce8b0776f6a747a376de7abf22996))
+* **servers:** update check flow with player guard ([c7ac7ed](https://github.com/jeremiejt38/guardian_bot/commit/c7ac7edb4870eecd2c9eb236b45d9f1ffdbbccca))
+* **servers:** update flow gated on connected players ([14b0a43](https://github.com/jeremiejt38/guardian_bot/commit/14b0a4341242add90966ce323641404e5c513811))
+
 ## [0.30.25](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.24...v0.30.25) (2026-11-13)
 
 
