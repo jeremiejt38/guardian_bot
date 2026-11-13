@@ -8,6 +8,7 @@ const { createGuildRunTracker } = require('../utils/scheduling');
 const { guardAsync } = require('../utils/intervalGuard');
 const logger = require('../logs/logger');
 const { queryPlayers } = require('./gameQuery');
+const pelican = require('./pelicanApi');
 
 const runTracker = createGuildRunTracker();
 
@@ -129,7 +130,16 @@ async function monitorServers(client) {
 
     let statusChanged = false;
     for (const server of guildServers) {
-      const status = await checkTcpServer(server.ip, Number(server.port));
+      // Serveur lié à Pelican -> l'API fait foi (le ping TCP vers l'IP publique
+      // échoue en hairpin depuis le host) ; sinon ping TCP classique.
+      let status;
+      if (server.pelican_identifier && pelican.isConfigured()) {
+        const r = await pelican.getResources(server.pelican_identifier).catch(() => null);
+        const st = r?.current_state;
+        status = st === 'running' ? 'online' : (st === 'starting' || st === 'stopping') ? 'starting' : 'offline';
+      } else {
+        status = await checkTcpServer(server.ip, Number(server.port));
+      }
       if (server.last_status !== status) statusChanged = true;
       db.prepare('UPDATE servers_jeu SET last_status = ?, last_check = ? WHERE server_id = ?').run(status, now, server.server_id);
 
