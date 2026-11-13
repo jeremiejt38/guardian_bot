@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.24](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.23...v0.30.24) (2026-11-13)
+
+
+### Bug Fixes
+
+* **servers:** map pelican starting/stopping to unstable status ([58d4ab6](https://github.com/jeremiejt38/guardian_bot/commit/58d4ab66f2a894029d5835a2293ac17ee4865f8c))
+* **servers:** use unstable for pelican starting state ([eecc04b](https://github.com/jeremiejt38/guardian_bot/commit/eecc04b123d9857a929dc46f67a2bf4d689f4823))
+
 ## [0.30.23](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.22...v0.30.23) (2026-11-13)
 
 
