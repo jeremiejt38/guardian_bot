@@ -11,7 +11,7 @@ const { ensureRequestsPanelHasGameButton } = require('../modules/games/gameReque
 const { ensureRequestsPanel } = require('../modules/members/memberRequests');
 const { upsertStatusEmbed } = require('../modules/config/botPanel');
 const { getGuildSetting, setGuildSetting } = require('../modules/config/settings');
-const { setConfig, getConfig } = require('../database/db');
+const { setConfig, getConfig, getDb, deleteGuildData } = require('../database/db');
 const { runChannelMigrations } = require('../modules/migrations/channelMigrations');
 const { runVersionedMigrations } = require('../modules/migrations/versionedMigrations');
 const { restoreConfigFromBackup, saveConfigBackup } = require('../modules/config/configBackup');
@@ -43,6 +43,20 @@ module.exports = {
     }
 
     await checkMissingPermissions(client).catch((err) => logger.error('Permission startup check failed', err));
+
+    // Purge des guilds orphelines : lignes DB restantes après un kick/ban du bot
+    try {
+      const known = new Set(client.guilds.cache.keys());
+      const stale = getDb().prepare('SELECT guild_id FROM guilds').all()
+        .map((r) => r.guild_id)
+        .filter((id) => !known.has(id));
+      for (const id of stale) {
+        deleteGuildData(id);
+        logger.info(`Purged stale guild data for ${id}`);
+      }
+    } catch (err) {
+      logger.error('Stale guild purge failed', err);
+    }
 
     for (const guild of client.guilds.cache.values()) {
       try {
