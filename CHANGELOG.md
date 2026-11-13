@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.23](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.22...v0.30.23) (2026-11-13)
+
+
+### Bug Fixes
+
+* **servers:** Pelican state as status source for linked servers ([4c08a0f](https://github.com/jeremiejt38/guardian_bot/commit/4c08a0f312249f08483eda7fd4701de0edb5020d))
+* **servers:** use Pelican state for linked servers ([914048c](https://github.com/jeremiejt38/guardian_bot/commit/914048c822c3f0ebfeaa4cbd4b5463e60608848d))
+
 ## [0.30.22](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.21...v0.30.22) (2026-11-13)
 
 
