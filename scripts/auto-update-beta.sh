@@ -1,7 +1,8 @@
 #!/bin/bash
 # Auto-update Guardian from the beta branch.
-# Cron (*/5) on the Hetzner host. NOTE: despite the name, this deploys
-# origin/beta into /opt/guardian — the PRODUCTION checkout and PM2 process.
+# Cron (*/5) on the Hetzner host. Deploys origin/beta into
+# /opt/guardian-beta — the BETA environment only. Production is deployed
+# manually per release tag via scripts/update-hetzner-stable.sh.
 #
 # Safety mechanisms:
 #  - self-copy before running (git reset must not rewrite the executing file)
@@ -11,10 +12,10 @@
 #  - optional Discord webhook alert via DEPLOY_WEBHOOK_URL in /opt/guardian/.env
 set -uo pipefail
 
-REPO_DIR="/opt/guardian"
+REPO_DIR="/opt/guardian-beta"
 GUARDIAN_DIR="${REPO_DIR}/guardian"
 BRANCH="beta"
-PM2_APP="guardian"
+PM2_APP="guardian-beta"
 LOG_FILE="/var/log/guardian/auto-update-beta.log"
 STATE_DIR="${REPO_DIR}/.deploy-state"
 BLOCKED_FILE="${STATE_DIR}/blocked-shas"
@@ -47,9 +48,9 @@ deploy_to() { # $1 = target sha/ref
   git -C "$REPO_DIR" reset --hard "$1" || return 1
   (cd "$GUARDIAN_DIR" && npm ci --omit=dev) || return 1
   if pm2 pid "$PM2_APP" > /dev/null 2>&1; then
-    (cd "$GUARDIAN_DIR" && pm2 restart ecosystem.config.js) || pm2 restart "$PM2_APP"
+    pm2 restart "$PM2_APP"
   else
-    (cd "$GUARDIAN_DIR" && pm2 start ecosystem.config.js)
+    (cd "$GUARDIAN_DIR" && pm2 start npm --name "$PM2_APP" -- run start:beta)
   fi
 }
 
