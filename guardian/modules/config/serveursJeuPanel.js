@@ -142,17 +142,15 @@ async function refreshServerListPanel(guild) {
   const servers = getServers(guildId).filter((s) => s.approved);
 
   const msgs = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-  const botMsgs = msgs?.filter((m) => m.author.id === guild.client.user.id) ?? new Map();
-  for (const m of botMsgs.values()) await m.delete().catch(() => {});
+  const botMsgs = [...(msgs?.filter((m) => m.author.id === guild.client.user.id).values() ?? [])];
 
-  if (servers.length === 0) {
-    await channel.send({ content: '**🖥️ Serveurs de jeu disponibles**\n_Aucun serveur configuré pour le moment._' }).catch((e) => logger.warn(`Guild ${guildId}: liste-serveurs send failed: ${e.message}`));
-    return;
-  }
+  // Édition en place : si chaque serveur a déjà son message (status_message_id),
+  // on modifie le contenu au lieu de tout supprimer/reposter.
+  const byId = new Map(botMsgs.map((m) => [m.id, m]));
+  const header = botMsgs.find((m) => m.content.includes('Serveurs de jeu disponibles'));
+  const allEditable = servers.length > 0 && servers.every((s) => s.status_message_id && byId.has(s.status_message_id));
 
-  await channel.send({ content: '**🖥️ Serveurs de jeu disponibles**' }).catch(() => {});
-
-  for (const s of servers) {
+  const renderServer = async (s) => {
     const online = s.last_status === 'online';
     const emoji = online ? '🟢' : s.last_status === 'unstable' ? '🟡' : '🔴';
     // Infos de connexion visibles seulement quand le serveur tourne.
@@ -179,7 +177,38 @@ async function refreshServerListPanel(guild) {
         .setLabel('🔍 Vérifier MAJ')
         .setStyle(ButtonStyle.Primary));
     }
-    await channel.send({ content, components: row.components.length ? [row] : [] }).catch((e) => logger.warn(`Guild ${guildId}: liste-serveurs entry failed: ${e.message}`));
+    return { content, components: row.components.length ? [row] : [] };
+  };
+
+  if (servers.length === 0) {
+    for (const m of botMsgs) await m.delete().catch(() => {});
+    await channel.send({ content: '**🖥️ Serveurs de jeu disponibles**\n_Aucun serveur configuré pour le moment._' }).catch((e) => logger.warn(`Guild ${guildId}: liste-serveurs send failed: ${e.message}`));
+    return;
+  }
+
+  if (!header) {
+    for (const m of botMsgs) await m.delete().catch(() => {});
+    await channel.send({ content: '**🖥️ Serveurs de jeu disponibles**' }).catch(() => {});
+  }
+
+  if (allEditable) {
+    for (const s of servers) {
+      const payload = await renderServer(s);
+      await byId.get(s.status_message_id).edit(payload).catch(async () => {
+        const sent = await channel.send(payload).catch(() => null);
+        if (sent) getDb().prepare('UPDATE servers_jeu SET status_message_id = ? WHERE server_id = ?').run(sent.id, s.server_id);
+      });
+    }
+    logger.info(`Guild ${guildId}: liste-serveurs edited in place — ${servers.length} serveur(s)`);
+    return;
+  }
+
+  // Le set a changé (ajout/suppression) -> on reposte proprement.
+  for (const m of botMsgs) { if (m !== header) await m.delete().catch(() => {}); }
+  for (const s of servers) {
+    const payload = await renderServer(s);
+    const sent = await channel.send(payload).catch((e) => { logger.warn(`Guild ${guildId}: liste-serveurs entry failed: ${e.message}`); return null; });
+    if (sent) getDb().prepare('UPDATE servers_jeu SET status_message_id = ? WHERE server_id = ?').run(sent.id, s.server_id);
   }
   logger.info(`Guild ${guildId}: liste-serveurs refreshed — ${servers.length} serveur(s)`);
 }
