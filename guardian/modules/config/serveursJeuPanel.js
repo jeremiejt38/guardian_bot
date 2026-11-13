@@ -15,6 +15,11 @@ const { getGradeMappings } = require('../initialisation/gradeMapping');
 const { logConfigChange } = require('./configLogger');
 const { getDb } = require('../../database/db');
 const logger = require('../logs/logger');
+const GAME_ICONS = {
+  minecraft: '⛏️', valheim: '⚔️', fs25: '🚜', stationeers: '🛰️',
+  hytale: '🧱', vintagestory: '🏰', '7dtd': '🧟', satisfactory: '🏭',
+  spaceengineers: '🚀', astroneer: '🌌', eco: '🌿',
+};
 const { queryPlayers } = require('../servers/gameQuery');
 
 const IDS = Object.freeze({
@@ -64,7 +69,7 @@ function hasManagerGrade(member, guildId) {
 }
 
 function getServers(guildId) {
-  return getDb().prepare("SELECT * FROM servers_jeu WHERE guild_id = ? ORDER BY (last_status = 'online') DESC, game, name").all(guildId);
+  return getDb().prepare("SELECT * FROM servers_jeu WHERE guild_id = ? ORDER BY game, name").all(guildId);
 }
 
 function statusEmoji(status) {
@@ -151,7 +156,7 @@ async function refreshServerListPanel(guild) {
     const online = s.last_status === 'online';
     const emoji = online ? '🟢' : s.last_status === 'unstable' ? '🟡' : '🔴';
     // Infos de connexion visibles seulement quand le serveur tourne.
-    const parts = [`${emoji} **${s.name}** — ${s.game}`, online ? 'en ligne' : s.last_status === 'unstable' ? 'démarrage/arrêt' : 'hors ligne'];
+    const parts = [`${emoji} ${GAME_ICONS[s.game] || '🎮'} **${s.name}** — ${s.game}`, online ? 'en ligne' : s.last_status === 'unstable' ? 'démarrage/arrêt' : 'hors ligne'];
     if (s.description) parts.push(`_${s.description}_`);
     if (online) {
       const players = await queryPlayers(s.ip, s.port).catch(() => null);
