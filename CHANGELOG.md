@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.25](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.24...v0.30.25) (2026-11-13)
+
+
+### Features
+
+* **servers:** alpha sort + game icons ([f6d54aa](https://github.com/jeremiejt38/guardian_bot/commit/f6d54aa725fc508ce5571c9ac621005c0c98c5a8))
+* **servers:** alphabetical game sort + per-game icon in member list ([d75078a](https://github.com/jeremiejt38/guardian_bot/commit/d75078a19bd21dfdc07968d51cdb5ec4222028f7))
+
 ## [0.30.24](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.23...v0.30.24) (2026-11-13)
 
 
