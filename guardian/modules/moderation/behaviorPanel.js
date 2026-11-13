@@ -134,12 +134,14 @@ async function seedBehaviorPanel(guild) {
   if (!channel) return;
 
   const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
-  const hasPanel = messages?.some(
+  const panel = messages?.find(
     (m) => m.author.id === guild.client.user.id && m.components.length > 0
   );
-  if (hasPanel) return;
-
   const guildId = guild.id;
+  if (panel) {
+    await panel.edit({ content: buildPanelContent(guildId), components: buildThresholdRows(guildId) }).catch(() => undefined);
+    return;
+  }
   await channel.send({
     content: buildPanelContent(guildId),
     components: buildThresholdRows(guildId)

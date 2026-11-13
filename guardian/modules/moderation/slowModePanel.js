@@ -99,22 +99,23 @@ async function seedSlowModePanel(guild) {
   if (!channel) return;
 
   const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
-  const hasPanel = messages?.some(
+  const panel = messages?.find(
     (m) => m.author.id === guild.client.user.id &&
       m.components.length > 0 &&
       m.components[0]?.components?.[0]?.customId === IDS.panel
   );
-  if (hasPanel) return;
 
   const guildId = guild.id;
   const selectRows = buildChannelSelectMenu(guild, guildId, 0);
   const components = [buildActionRow(guildId)];
   if (selectRows) components.unshift(...selectRows);
+  const payload = { content: buildPanelContent(guildId, guild), components };
 
-  await channel.send({
-    content: buildPanelContent(guildId, guild),
-    components
-  }).catch(() => undefined);
+  if (panel) {
+    await panel.edit(payload).catch(() => undefined);
+    return;
+  }
+  await channel.send(payload).catch(() => undefined);
 }
 
 async function handleSlowModeInteraction(interaction) {

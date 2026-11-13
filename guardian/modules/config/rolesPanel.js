@@ -93,7 +93,7 @@ async function seedRolesPanel(guild) {
   if (!channel) return;
   const msgs = await channel.messages.fetch({ limit: 5 }).catch(() => null);
   const hasPanel = msgs?.some((m) => m.author.id === guild.client.user.id && m.components.length > 0);
-  if (hasPanel) return;
+  if (hasPanel) { await refreshRolesPanel(guild); return; }
   const guildId = guild.id;
   await channel.send({ content: buildPanelContent(guild, guildId), components: buildRows(guildId) }).catch(() => undefined);
 }
