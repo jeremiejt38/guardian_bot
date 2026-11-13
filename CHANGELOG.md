@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.27](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.26...v0.30.27) (2026-11-13)
+
+
+### Features
+
+* **servers:** edit member list entries in place ([f89d8d3](https://github.com/jeremiejt38/guardian_bot/commit/f89d8d3d4c6942e479871b4859f728f1bcd70230))
+* **servers:** edit-in-place member list ([cfa7cd3](https://github.com/jeremiejt38/guardian_bot/commit/cfa7cd317275ca67bab09e28aae0731b8a2102d4))
+
 ## [0.30.26](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.25...v0.30.26) (2026-11-13)
 
 
