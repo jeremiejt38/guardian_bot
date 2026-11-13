@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.21](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.20...v0.30.21) (2026-11-13)
+
+
+### Features
+
+* **servers:** auto-refresh member list on any status change ([3a7f0b5](https://github.com/jeremiejt38/guardian_bot/commit/3a7f0b58d8002c38ec5b57af2d64f22b14ddb6f8))
+* **servers:** auto-refresh member list on status change ([e5ef357](https://github.com/jeremiejt38/guardian_bot/commit/e5ef357e012bc8688b1b14c9e0da919a2a7fed92))
+
 ## [0.30.20](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.19...v0.30.20) (2026-11-13)
 
 
