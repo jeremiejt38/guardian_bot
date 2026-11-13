@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.18](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.17...v0.30.18) (2026-11-13)
+
+
+### Features
+
+* **servers:** Pelican description in member list ([a6053e7](https://github.com/jeremiejt38/guardian_bot/commit/a6053e77d01fdabc41acbb99f3014bbacd6852a1))
+* **servers:** show Pelican description in member list ([f35cb20](https://github.com/jeremiejt38/guardian_bot/commit/f35cb20aeaf2cb081e27e631f3ef15a367c1ac2b))
+
 ## [0.30.17](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.16...v0.30.17) (2026-11-13)
 
 
