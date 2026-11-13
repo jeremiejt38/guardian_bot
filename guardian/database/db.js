@@ -337,6 +337,7 @@ const MIGRATIONS = [
       if (!cols.includes('text_channel_enabled')) conn.exec('ALTER TABLE servers_jeu ADD COLUMN text_channel_enabled INTEGER NOT NULL DEFAULT 0');
       if (!cols.includes('galerie_enabled'))      conn.exec('ALTER TABLE servers_jeu ADD COLUMN galerie_enabled INTEGER NOT NULL DEFAULT 0');
       if (!cols.includes('changelog_enabled'))    conn.exec('ALTER TABLE servers_jeu ADD COLUMN changelog_enabled INTEGER NOT NULL DEFAULT 0');
+      if (!cols.includes('list_message_id'))      conn.exec('ALTER TABLE servers_jeu ADD COLUMN list_message_id TEXT');
       if (!cols.includes('forum_enabled'))        conn.exec('ALTER TABLE servers_jeu ADD COLUMN forum_enabled INTEGER NOT NULL DEFAULT 0');
     }
   },
