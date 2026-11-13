@@ -64,7 +64,7 @@ function hasManagerGrade(member, guildId) {
 }
 
 function getServers(guildId) {
-  return getDb().prepare('SELECT * FROM servers_jeu WHERE guild_id = ?').all(guildId);
+  return getDb().prepare("SELECT * FROM servers_jeu WHERE guild_id = ? ORDER BY (last_status = 'online') DESC, game, name").all(guildId);
 }
 
 function statusEmoji(status) {
