@@ -157,7 +157,7 @@ async function seedReportPanel(guild) {
   const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
   const panel = messages?.find(
     (m) => m.author.id === guild.client.user.id && m.components.length > 0 &&
-      m.components[0]?.components?.[0]?.customId === 'report:open'
+      m.components.some((row) => row.components?.some((c) => c.customId === 'report:open'))
   );
   if (panel) {
     await panel.edit({ content: t(guild.id, 'reports.panelText') }).catch(() => undefined);
