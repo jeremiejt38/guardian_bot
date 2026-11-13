@@ -152,6 +152,7 @@ async function refreshServerListPanel(guild) {
     const emoji = online ? '🟢' : s.last_status === 'offline' ? '🔴' : '⚪';
     // Infos de connexion visibles seulement quand le serveur tourne.
     const lines = [`${emoji} **${s.name}** — ${s.game}`, `> Statut : ${online ? 'en ligne' : 'hors ligne'}`];
+    if (s.description) lines.push(`> _${s.description}_`);
     if (online) {
       const players = await queryPlayers(s.ip, s.port).catch(() => null);
       lines.push(`> Joueurs : ${players ? `${players.players}${players.max != null ? '/' + players.max : ''}` : 'n/a'}`);

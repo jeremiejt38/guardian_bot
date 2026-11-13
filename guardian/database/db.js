@@ -348,6 +348,14 @@ const MIGRATIONS = [
       if (!cols.includes('pelican_identifier')) conn.exec('ALTER TABLE servers_jeu ADD COLUMN pelican_identifier TEXT');
     }
   },
+  {
+    version: 14,
+    description: 'servers_jeu: description field from Pelican',
+    up(conn) {
+      const cols = conn.prepare('PRAGMA table_info(servers_jeu)').all().map((c) => c.name);
+      if (!cols.includes('description')) conn.exec('ALTER TABLE servers_jeu ADD COLUMN description TEXT');
+    }
+  },
   // @premium-start
   {
     version: 12,
