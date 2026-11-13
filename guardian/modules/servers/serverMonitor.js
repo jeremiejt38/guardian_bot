@@ -52,7 +52,8 @@ function buildServerEmbed(server, status, checkedAtIso) {
   return new EmbedBuilder()
     .setTitle(`${server.name} (${server.game})`)
     .setDescription([
-      `IP: ${server.ip}:${server.port}`,
+      `IP: ||\`${server.ip}:${server.port}\`||`,
+      ...(server.password ? [`Mot de passe: ||\`${server.password}\`||`] : []),
       `Statut: ${renderStatus(status)}`,
       `Dernière vérification: ${new Date(checkedAtIso).toLocaleString('fr-FR')}`
     ].join('\n'));
