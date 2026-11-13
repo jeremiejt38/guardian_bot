@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.29](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.28...v0.30.29) (2026-11-13)
+
+
+### Bug Fixes
+
+* **db:** proper v15 migration for list_message_id ([8c4387f](https://github.com/jeremiejt38/guardian_bot/commit/8c4387f6b717bbed754f65315107075a686dcb31))
+* **db:** v15 migration for list_message_id ([3ed85fd](https://github.com/jeremiejt38/guardian_bot/commit/3ed85fdbf9bf42b168522920561b725eee60d06d))
+
 ## [0.30.28](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.27...v0.30.28) (2026-11-13)
 
 
