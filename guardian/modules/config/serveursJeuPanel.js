@@ -149,7 +149,7 @@ async function refreshServerListPanel(guild) {
   for (const s of servers) {
     const emoji = s.last_status === 'online' ? '🟢' : s.last_status === 'offline' ? '🔴' : '⚪';
     const passwordLine = s.password ? `\n> 🔑 Mot de passe : ||${s.password}||` : '';
-    const content = `${emoji} **${s.name}** — ${s.game}\n> IP : \`${s.ip}:${s.port}\`${passwordLine}`;
+    const content = `${emoji} **${s.name}** — ${s.game}\n> IP : ||\`${s.ip}:${s.port}\`||${passwordLine}`;
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`server:copy:${s.server_id}`)
