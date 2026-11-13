@@ -238,7 +238,10 @@ module.exports = {
     if (
       interaction.customId?.startsWith('serveurs-jeu:') ||
       interaction.customId?.startsWith('servers:approve:') ||
-      interaction.customId?.startsWith('servers:reject:')
+      interaction.customId?.startsWith('servers:reject:') ||
+      interaction.customId?.startsWith('servers:checkupdate:') ||
+      interaction.customId?.startsWith('servers:doupdate:') ||
+      interaction.customId?.startsWith('server:copy:')
     ) {
       const handled = await handleServeursJeuInteraction(interaction);
       if (handled) return;
