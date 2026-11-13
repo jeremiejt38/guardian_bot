@@ -221,10 +221,8 @@ function setStep2Config(guildId, config) {
   setGuildSetting(guildId, 'guides', 'enabled', config.guidesEnabled);
 }
 
-// @premium-start
 const SYSCHANNEL_CHOICES = ['disabled', 'general', 'keep'];
 const SYSCHANNEL_LABELS = { disabled: '🔕 Désactivé', general: '📢 #general', keep: '📌 Garder actuel' };
-// @premium-end
 
 function buildStep2Content(guildId, guild, { TOTAL_STEPS, onOff: _onOff }) {
   const c = getStep2Config(guildId);
@@ -646,8 +644,9 @@ function buildStep4Content(guildId, guild, { TOTAL_STEPS, gradeLabel, onOff }) {
     (() => { const p = c.joinServerPresentation; const prev = p ? `"${p.slice(0, 60)}${p.length > 60 ? '…' : ''}"` : '*non défini*'; return `🌟 **Présentation #rejoindre-notre-serveur** : ${prev}`; })(),
     '> Texte personnalisé affiché dans le channel de recrutement des invités.',
     ...(isCommunity
-      ? (isPremiumFeatureEnabled(guildId)
+      ? (
           // @premium-start
+          isPremiumFeatureEnabled(guildId)
           ? [
               '',
               '### ⚙️ Paramètres Discord (serveur Community)',
@@ -658,8 +657,9 @@ function buildStep4Content(guildId, guild, { TOTAL_STEPS, gradeLabel, onOff }) {
               `📝 **Description du serveur** — ${descPreview}`,
               '> Texte affiché dans le profil public du serveur Discord.',
             ]
+          :
           // @premium-end
-          : [
+          [
               '',
               '### 🔒 Paramètres Discord (serveur Community)',
               '> Réservés à **Guardian Premium**.',
@@ -1288,8 +1288,10 @@ module.exports = {
   buildStep7Content,
   buildStep7Components,
   // Step 8 (premium)
+  // @premium-start
   buildStep8DiscordContent,
   buildStep8DiscordComponents,
+  // @premium-end
   // Step 9
   buildStep9Summary,
   buildStep9Components,

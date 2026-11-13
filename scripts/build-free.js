@@ -115,7 +115,7 @@ function processDir(srcDir, outDir) {
     const outPath = path.join(outDir, entry.name);
 
     if (entry.isDirectory()) {
-      if (['node_modules', 'data', '.git'].includes(entry.name)) continue;
+      if (['node_modules', '.git'].includes(entry.name)) continue;
       if (!DRY_RUN) fs.mkdirSync(outPath, { recursive: true });
       processDir(srcPath, outPath);
       continue;

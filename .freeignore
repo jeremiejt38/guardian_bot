@@ -8,8 +8,10 @@ docs/specification.md
 docs/initialisation-setup-specs.md
 docs/roadmap-historique.md
 
-# Données sensibles
-data/
+# Données sensibles (runtime) — le seed statique data/steamGames.json doit shipper
+data/*.db
+data/*.db-shm
+data/*.db-wal
 guardian.db
 *.db
 *.db-shm
@@ -17,3 +19,10 @@ guardian.db
 .env
 .env.*
 !.env.example
+
+# Tests premium — le code testé n'existe pas dans le bundle free
+guardian/tests/channelsPanelPremium.test.js
+guardian/tests/premiumGate.test.js
+guardian/tests/tier.test.js
+guardian/tests/suggestions.test.js
+guardian/tests/welcomeMessage.test.js
