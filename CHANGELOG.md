@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.15](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.14...v0.30.15) (2026-11-13)
+
+
+### Features
+
+* **servers:** spoiler connection info in member list ([e2c91d1](https://github.com/jeremiejt38/guardian_bot/commit/e2c91d1d88d2926e0e585357af26a35ec9dece62))
+* **servers:** spoiler IP and password in member server list ([293e28b](https://github.com/jeremiejt38/guardian_bot/commit/293e28b9963dd4fdede1e4bbfe30d26914ab1f40))
+
 ## [0.30.14](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.13...v0.30.14) (2026-11-13)
 
 
