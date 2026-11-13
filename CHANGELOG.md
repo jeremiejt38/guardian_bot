@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.33](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.32...v0.30.33) (2026-11-13)
+
+
+### Bug Fixes
+
+* **jeux:** refresh existing games panel on seed ([336d251](https://github.com/jeremiejt38/guardian_bot/commit/336d251ff6748de48ade57de9168bb3e4e6f255a))
+* **jeux:** refresh games panel on seed ([236ad9e](https://github.com/jeremiejt38/guardian_bot/commit/236ad9e2788d0292a52d0d4f440ced784ceb75d2))
+
 ## [0.30.32](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.31...v0.30.32) (2026-11-13)
 
 
