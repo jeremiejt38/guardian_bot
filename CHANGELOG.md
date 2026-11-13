@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.30](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.29...v0.30.30) (2026-11-13)
+
+
+### Features
+
+* **servers:** real Steam update check ([e507442](https://github.com/jeremiejt38/guardian_bot/commit/e507442467f53b54f6fba4347e57587d7326a4fd))
+* **servers:** real Steam update check behind busy button ([4f3a832](https://github.com/jeremiejt38/guardian_bot/commit/4f3a83245209fad11b04e836b0994cabe64c1ca5))
+
 ## [0.30.29](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.28...v0.30.29) (2026-11-13)
 
 
