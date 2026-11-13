@@ -102,7 +102,7 @@ async function seedChannelsPanel(guild) {
   const msgs = await channel.messages.fetch({ limit: 10 }).catch(() => null);
   const botPanels = msgs?.filter((m) => m.author.id === guild.client.user.id && m.components.length > 0)?.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-  if (botPanels && botPanels.size >= 1) return;
+  if (botPanels && botPanels.size >= 1) { await refreshChannelsPanel(guild); return; }
 
   await channel.send({ content: buildPanelContent(guildId), components: chunk1 }).catch(() => undefined);
   if (chunk2.length > 0) {

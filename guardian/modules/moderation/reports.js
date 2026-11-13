@@ -155,11 +155,14 @@ async function seedReportPanel(guild) {
   if (!channel) return;
 
   const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
-  const hasPanel = messages?.some(
+  const panel = messages?.find(
     (m) => m.author.id === guild.client.user.id && m.components.length > 0 &&
       m.components[0]?.components?.[0]?.customId === 'report:open'
   );
-  if (hasPanel) return;
+  if (panel) {
+    await panel.edit({ content: t(guild.id, 'reports.panelText') }).catch(() => undefined);
+    return;
+  }
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()

@@ -173,6 +173,8 @@ async function seedBotPanel(guild) {
   if (!hasPanel) {
     const guildId = guild.id;
     await channel.send({ content: buildPanelContent(guildId), components: buildRows(guildId) }).catch(() => undefined);
+  } else {
+    await refreshBotPanel(guild);
   }
   await upsertStatusEmbed(guild);
 }
