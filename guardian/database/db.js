@@ -400,7 +400,15 @@ const MIGRATIONS = [
         CREATE INDEX IF NOT EXISTS idx_rps_game ON rich_presence_sessions(guild_id, game_name);
       `);
     }
-  }
+  },
+  {
+    version: 15,
+    description: 'servers_jeu: list_message_id for member panel messages',
+    up(conn) {
+      const cols = conn.prepare('PRAGMA table_info(servers_jeu)').all().map((c) => c.name);
+      if (!cols.includes('list_message_id')) conn.exec('ALTER TABLE servers_jeu ADD COLUMN list_message_id TEXT');
+    }
+  },
 ];
 
 function migrateDatabase() {
