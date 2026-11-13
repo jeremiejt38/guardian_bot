@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.35](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.34...v0.30.35) (2026-11-13)
+
+
+### Bug Fixes
+
+* **panels:** robust panel detection + slowmode dedupe ([a480ee9](https://github.com/jeremiejt38/guardian_bot/commit/a480ee96ac21a1e43ef222e3ccb3284d6eda2e38))
+* **panels:** scan all rows for panel detection, dedupe slowmode ([d37e4c5](https://github.com/jeremiejt38/guardian_bot/commit/d37e4c55be72d66f3ffa693847a05bf93bc30fc2))
+
 ## [0.30.34](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.33...v0.30.34) (2026-11-13)
 
 
