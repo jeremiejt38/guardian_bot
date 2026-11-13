@@ -144,6 +144,11 @@ module.exports = {
 
     await notifyAllGuildsNewOptions(client).catch(() => {});
 
+    // @premium-start
+    try {
+      require('../modules/servers/pelicanStatus').startPelicanStatusLoop(client, guardAsync);
+    } catch (e) { logger.error('Pelican status loop failed to start', e); }
+    // @premium-end
     setInterval(guardAsync(async () => {
       for (const guild of client.guilds.cache.values()) {
         upsertStatusEmbed(guild).catch(() => {});

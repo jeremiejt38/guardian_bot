@@ -95,6 +95,12 @@ module.exports = {
       return;
     }
 
+    // @premium-start
+    if (interaction.isButton() && interaction.customId?.startsWith('pelican:')) {
+      const { handlePelicanButton } = require('../modules/servers/pelicanStatus');
+      if (await handlePelicanButton(interaction)) return;
+    }
+    // @premium-end
     if (interaction.isButton() && interaction.customId?.startsWith('premium:gate:')) {
       await handlePremiumGateClick(interaction);
       return;
