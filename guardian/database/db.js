@@ -512,10 +512,15 @@ function setGuildTier(guildId, tier, expiresAt = null) {
 }
 // @premium-end
 
+function closeDatabase() {
+  if (db) { try { db.close(); } catch {} db = null; }
+}
+
 module.exports = {
   initDatabase,
   migrateDatabase,
   getDb,
+  closeDatabase,
   setConfig,
   getConfig,
   setGrade,

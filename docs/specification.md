@@ -1048,7 +1048,7 @@ guardian/
 │
 ├── modules/
 │   ├── initialisation/
-│   │   ├── setup.js              # Flow setup guidé, étapes 1 à 5
+│   │   ├── setup.js              # Flow setup guidé, étapes 1 à 9
 │   │   └── checkInstall.js       # Vérifie si guildId déjà installé (hash SHA256)
 │   │
 │   ├── members/

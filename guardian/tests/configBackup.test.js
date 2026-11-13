@@ -96,3 +96,56 @@ test('decodeSnapshot rejects snapshot with wrong version marker', () => {
   const decoded = decodeSnapshot(encoded);
   assert.strictEqual(decoded._v, 99, 'Doit décoder mais la version sera rejetée par restoreConfigFromBackup');
 });
+
+// Régression: discord.js v14 fetchPins() retourne {items:[{message}]} et non une Collection.
+test('saveConfigBackup edits existing pinned message when fetchPins returns {items}', async () => {
+  const { saveConfigBackup, BACKUP_MARKER, BACKUP_CHANNEL_NAME } = require('../modules/config/configBackup');
+  const { Collection, ChannelType } = require('discord.js');
+  initDatabase(':memory:');
+  const botId = 'bot-1';
+  let edited = null, sent = false;
+  const existingMsg = {
+    content: `${BACKUP_MARKER}\nold`,
+    author: { id: botId },
+    edit: async (c) => { edited = c; }
+  };
+  const channel = {
+    name: BACKUP_CHANNEL_NAME, type: ChannelType.GuildText,
+    edit: async () => {}, setPosition: async () => {},
+    send: async () => { sent = true; return { pin: async () => {} }; },
+    messages: { fetchPins: async () => ({ items: [{ message: existingMsg, pinnedAt: new Date() }] }) }
+  };
+  const guild = {
+    id: gid(), ownerId: 'o1',
+    client: { user: { id: botId } },
+    members: { me: { id: botId } },
+    roles: { everyone: { id: 'r1' } },
+    channels: { cache: new Collection([['c1', channel]]), create: async () => channel }
+  };
+  await saveConfigBackup(guild);
+  assert.ok(edited && edited.includes(BACKUP_MARKER), 'doit éditer le message épinglé existant');
+  assert.strictEqual(sent, false, 'ne doit pas renvoyer de message');
+});
+
+test('saveConfigBackup sends+pins a new message when pins are empty', async () => {
+  const { saveConfigBackup, BACKUP_MARKER, BACKUP_CHANNEL_NAME } = require('../modules/config/configBackup');
+  const { Collection, ChannelType } = require('discord.js');
+  initDatabase(':memory:');
+  const botId = 'bot-1';
+  let sent = false, pinned = false;
+  const channel = {
+    name: BACKUP_CHANNEL_NAME, type: ChannelType.GuildText,
+    edit: async () => {}, setPosition: async () => {},
+    send: async () => { sent = true; return { pin: async () => { pinned = true; } }; },
+    messages: { fetchPins: async () => ({ items: [] }) }
+  };
+  const guild = {
+    id: gid(), ownerId: 'o1',
+    client: { user: { id: botId } },
+    members: { me: { id: botId } },
+    roles: { everyone: { id: 'r1' } },
+    channels: { cache: new Collection([['c1', channel]]), create: async () => channel }
+  };
+  await saveConfigBackup(guild);
+  assert.ok(sent && pinned, 'doit envoyer puis épingler un nouveau message');
+});
