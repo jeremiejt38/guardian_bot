@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.32](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.31...v0.30.32) (2026-11-13)
+
+
+### Bug Fixes
+
+* **servers:** route checkupdate/doupdate buttons to panel handler ([550498e](https://github.com/jeremiejt38/guardian_bot/commit/550498ed01535438337107520007e184c051e1de))
+* **servers:** route update buttons ([00de824](https://github.com/jeremiejt38/guardian_bot/commit/00de824936ee853fab9354f55a98c16dfb97673d))
+
 ## [0.30.31](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.30...v0.30.31) (2026-11-13)
 
 
