@@ -15,6 +15,7 @@ const { getGradeMappings } = require('../initialisation/gradeMapping');
 const { logConfigChange } = require('./configLogger');
 const { getDb } = require('../../database/db');
 const logger = require('../logs/logger');
+const { queryPlayers } = require('../servers/gameQuery');
 
 const IDS = Object.freeze({
   gameSelect:    'serveurs-jeu:game-select',
@@ -147,16 +148,30 @@ async function refreshServerListPanel(guild) {
   await channel.send({ content: '**🖥️ Serveurs de jeu disponibles**' }).catch(() => {});
 
   for (const s of servers) {
-    const emoji = s.last_status === 'online' ? '🟢' : s.last_status === 'offline' ? '🔴' : '⚪';
-    const passwordLine = s.password ? `\n> 🔑 Mot de passe : ||${s.password}||` : '';
-    const content = `${emoji} **${s.name}** — ${s.game}\n> IP : ||\`${s.ip}:${s.port}\`||${passwordLine}`;
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
+    const online = s.last_status === 'online';
+    const emoji = online ? '🟢' : s.last_status === 'offline' ? '🔴' : '⚪';
+    // Infos de connexion visibles seulement quand le serveur tourne.
+    const lines = [`${emoji} **${s.name}** — ${s.game}`, `> Statut : ${online ? 'en ligne' : 'hors ligne'}`];
+    if (online) {
+      const players = await queryPlayers(s.ip, s.port).catch(() => null);
+      lines.push(`> Joueurs : ${players ? `${players.players}${players.max != null ? '/' + players.max : ''}` : 'n/a'}`);
+      lines.push(`> IP : ||\`${s.ip}:${s.port}\`||`);
+      if (s.password) lines.push(`> 🔑 Mot de passe : ||${s.password}||`);
+    }
+    const content = lines.join('\n');
+    const row = new ActionRowBuilder();
+    if (!online && s.pelican_identifier) {
+      row.addComponents(new ButtonBuilder()
+        .setCustomId(`pelican:start:${s.pelican_identifier}`)
+        .setLabel('▶️ Démarrer')
+        .setStyle(ButtonStyle.Success));
+    } else if (online) {
+      row.addComponents(new ButtonBuilder()
         .setCustomId(`server:copy:${s.server_id}`)
         .setLabel('Copier IP')
-        .setStyle(ButtonStyle.Secondary)
-    );
-    await channel.send({ content, components: [row] }).catch((e) => logger.warn(`Guild ${guildId}: liste-serveurs entry failed: ${e.message}`));
+        .setStyle(ButtonStyle.Secondary));
+    }
+    await channel.send({ content, components: row.components.length ? [row] : [] }).catch((e) => logger.warn(`Guild ${guildId}: liste-serveurs entry failed: ${e.message}`));
   }
   logger.info(`Guild ${guildId}: liste-serveurs refreshed — ${servers.length} serveur(s)`);
 }
