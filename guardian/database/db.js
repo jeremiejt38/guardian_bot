@@ -512,20 +512,34 @@ function setGuildTier(guildId, tier, expiresAt = null) {
 }
 // @premium-end
 
-function closeDatabase() {
-  if (db) { try { db.close(); } catch {} db = null; }
+function deleteGuildData(guildId) {
+  const db = getDb();
+  const tables = [
+    'guild_config', 'grades', 'members', 'member_games', 'games',
+    'servers_jeu', 'parrainage', 'promotion_requests',
+    'rich_presence_sessions', 'sanctions', 'vocal_temp',
+    'changelogs_seen', 'game_requests', 'reports',
+  ];
+  const tx = db.transaction(() => {
+    for (const t of tables) {
+      try { db.prepare(`DELETE FROM ${t} WHERE guild_id = ?`).run(guildId); }
+      catch { /* table absente sur d'anciens schémas */ }
+    }
+    db.prepare('DELETE FROM guilds WHERE guild_id = ?').run(guildId);
+  });
+  tx();
 }
 
 module.exports = {
   initDatabase,
   migrateDatabase,
   getDb,
-  closeDatabase,
   setConfig,
   getConfig,
   setGrade,
   getGrade,
   getModerationRoleIds,
+  deleteGuildData,
   // @premium-start
   getGuildTier,
   setGuildTier,
