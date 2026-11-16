@@ -104,15 +104,23 @@ async function getRawgGameById(rawgId, apiKey = null) {
   }
 }
 
+let warnedNoKey = false;
+
 /**
  * Convenience: get the RAWG API key configured for a guild.
  * Falls back to the global env variable RAWG_API_KEY if set.
+ * Warns once when no key is configured so the degraded path is visible.
  * @param {string} guildId
  */
 function getRawgApiKey(guildId) {
-  return getGuildSetting(guildId, 'bot', 'rawg_api_key', null)
+  const key = getGuildSetting(guildId, 'bot', 'rawg_api_key', null)
     ?? process.env.RAWG_API_KEY
     ?? null;
+  if (!key && !warnedNoKey) {
+    warnedNoKey = true;
+    logger.warn('[rawgApi] no RAWG_API_KEY configured — non-Steam game lookups run without a key (rate limited / may fail)');
+  }
+  return key;
 }
 
 module.exports = { searchRawgGame, getRawgGameById, getRawgApiKey };
