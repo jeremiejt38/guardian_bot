@@ -103,6 +103,7 @@ async function _handleStep3(guildId, interaction) {
       else { setGuildSetting(guildId, 'setup', 'step', 4); await renderStep(interaction, 4); }
       return true;
     }
+    const slot = activeSlots[cursor];
     if (action === 'delete-afk' && slot?.key === 'voiceAfk') {
       const currentId = getGuildSetting(guildId, slot.settingSection, slot.settingKey, null);
       if (currentId && currentId !== 'guardian:create') {
