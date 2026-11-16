@@ -33,32 +33,42 @@ const CHANNELS = Object.freeze({
   reports: 'signalements',
   autoModeration: 'auto-moderation',
   behavior: 'comportement',
-  guardian: 'guardian',
-  roles: 'roles',
-  moderation: 'moderation',
+  guardian: 'staff',
+  roles: 'staff',
+  moderation: 'staff',
   validation: 'validation',
-  moderationLogs: 'moderation',
-  gameChannels: 'mes-channels',
-  gameList: 'ma-gamelist',
+  moderationLogs: 'moderation-logs',
+  gameChannels: 'gamelist-chan',
+  gameList: 'gamelist-chan',
   voiceCreate: 'creer-channel',
   serverList: 'liste-serveurs',
   serverManagement: 'gestion-serveurs',
   configLogs: 'guardian-logs',
-  botConfig: 'notifications',
-  notifications: 'notifications',
-  membres: 'membres',
-  channelsConfig: 'modules',
-  modules: 'modules',
+  botConfig: 'guardian-config',
+  notifications: 'guardian-config',
+  membres: 'guardian-config',
+  channelsConfig: 'guardian-config',
+  modules: 'guardian-config',
   guardianConfig: 'guardian-config',
-  vocauxConfig: 'vocaux',
-  jeux: 'jeux',
+  vocauxConfig: 'guardian-config',
+  jeux: 'guardian-config',
   suggestions: 'suggestions',
   annonces: 'annonces',
-  serveurs: 'serveurs',
+  serveurs: 'guardian-config',
   securityUpdates: 'maj-securite',
-  guardianBackup: 'guardian-backup',
+  guardianBackup: 'guardian-logs',
   becomeMember: 'devenir-membre',
   joinServer: 'rejoindre-notre-serveur'
+});
+
+// Migration de consolidation : quand un canal porte encore un ancien nom,
+// il est renommé en place (sauf si le nouveau nom est déjà pris).
+const LEGACY_CHANNEL_RENAMES = Object.freeze({
+  'guardian-config': ['membres', 'modules', 'vocaux', 'jeux', 'serveurs', 'notifications'],
+  staff: ['guardian', 'roles'],
+  'moderation-logs': ['moderation'],
+  'gamelist-chan': ['mes-channels', 'ma-gamelist'],
+  'guardian-logs': ['guardian-backup']
 });
 
 const CHANNEL_NAMES = Object.freeze({
@@ -120,5 +130,6 @@ module.exports = {
   CATEGORIES,
   CHANNELS,
   CHANNEL_NAMES,
+  LEGACY_CHANNEL_RENAMES,
   GRADE_NAMES
 };
