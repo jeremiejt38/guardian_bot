@@ -132,4 +132,4 @@ premiumGate.js
 
 ---
 
-The lowercase `docs/architecture.md` file is retained as detailed per-module documentation (premium annotation scheme, free-bundle build via `scripts/build-free.js`, required intents); this file is the canonical architecture source.
+The `docs/architecture-details.md` file is retained as detailed per-module documentation (premium annotation scheme, free-bundle build via `scripts/build-free.js`, required intents); this file is the canonical architecture source.
