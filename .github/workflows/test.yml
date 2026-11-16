@@ -20,8 +20,7 @@ jobs:
       - run: |
           cp .env.example .env
           cp guardian/.env.example guardian/.env
-          echo "DISCORD_TOKEN=ci-test-token" >> .env
-          echo "DISCORD_TOKEN=ci-test-token" >> guardian/.env
+          sed -i 's/^DISCORD_TOKEN=.*/DISCORD_TOKEN=ci-test-token/' .env guardian/.env
       - run: npm test
         working-directory: guardian
       - run: npm run lint
