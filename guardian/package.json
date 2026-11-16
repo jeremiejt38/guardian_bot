@@ -25,7 +25,7 @@
     "readme:dry": "node ../scripts/generate-readme.js --dry",
     "build:free": "node ../scripts/build-free.js",
     "build:free:dry": "node ../scripts/build-free.js --dry-run",
-    "lint": "eslint . --max-warnings 200"
+    "lint": "eslint ."
   },
   "dependencies": {
     "discord.js": "^14.26.4",
