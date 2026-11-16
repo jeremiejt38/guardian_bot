@@ -123,7 +123,7 @@ module.exports = {
           embed.setDescription(lines.join('\n'));
         }
 
-        await interaction.reply({ embeds: [embed], ephemeral: false });
+        await interaction.reply({ embeds: [embed], });
         return;
       }
 
@@ -143,7 +143,7 @@ module.exports = {
           embed.setDescription(lines.join('\n'));
         }
 
-        await interaction.reply({ embeds: [embed], ephemeral: false });
+        await interaction.reply({ embeds: [embed], });
         return;
       }
 
