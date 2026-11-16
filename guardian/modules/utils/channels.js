@@ -1,4 +1,5 @@
 const { ChannelType } = require('discord.js');
+const { LEGACY_CHANNEL_RENAMES } = require('../../config');
 
 function getChannelCache(guild) {
   return guild?.channels?.cache ?? null;
@@ -34,12 +35,24 @@ function findCategoryByName(guild, name) {
 }
 
 function findGuildTextChannelByName(guild, name, parentId) {
-  return getChannelCache(guild)?.find(
+  const cache = getChannelCache(guild);
+  const found = cache?.find(
     (channel) =>
       channel.type === ChannelType.GuildText &&
       namesMatch(channel.name, name) &&
       (parentId === undefined || channel.parentId === parentId)
   ) ?? null;
+  if (found) return found;
+  const legacyNames = LEGACY_CHANNEL_RENAMES[name];
+  if (!legacyNames) return null;
+  const legacy = cache?.find(
+    (channel) =>
+      channel.type === ChannelType.GuildText &&
+      legacyNames.some((old) => namesMatch(channel.name, old)) &&
+      (parentId === undefined || channel.parentId === parentId)
+  ) ?? null;
+  if (legacy) legacy.setName(name).catch(() => {});
+  return legacy;
 }
 
 function findGuildVoiceChannelByName(guild, name, parentId) {

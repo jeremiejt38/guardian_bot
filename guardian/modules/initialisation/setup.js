@@ -591,7 +591,9 @@ async function createModerationArea(guild, roleMap, ownerId) {
   await ensureTextChannel(guild, moderationCategory.id, CHANNELS.behavior,       moderationPermissions, { topic: t('init.topics.behavior',        {}, { guildId }) });
   await ensureTextChannel(guild, moderationCategory.id, CHANNELS.autoModeration, moderationPermissions, { topic: t('init.topics.autoModeration', {}, { guildId }) });
   await ensureTextChannel(guild, moderationCategory.id, CHANNELS.reports,        moderationPermissions, { topic: t('init.topics.reports',        {}, { guildId }) });
-  await ensureTextChannel(guild, moderationCategory.id, CHANNELS.securityUpdates, buildConfigPermissions(guild, roleMap, ownerId, GRADE_NAMES.manager), { topic: t('init.topics.securityUpdates', {}, { guildId }) });
+  if (guild.features?.includes('COMMUNITY')) {
+    await ensureTextChannel(guild, moderationCategory.id, CHANNELS.securityUpdates, buildConfigPermissions(guild, roleMap, ownerId, GRADE_NAMES.manager), { topic: t('init.topics.securityUpdates', {}, { guildId }) });
+  }
 }
 
 async function renameChannelIfExists(guild, oldName, newName) {
