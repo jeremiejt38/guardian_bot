@@ -31,7 +31,9 @@ jobs:
           find dist/guardian-free -name "*.js" -not -path "*/node_modules/*" -print0 \
             | xargs -0 -n1 node --check
       - name: Test env for bundle
-        run: cp guardian/.env.example dist/.env
+        run: |
+          cp guardian/.env.example dist/.env
+          sed -i 's/^DISCORD_TOKEN=.*/DISCORD_TOKEN=ci-test-token/' dist/.env
       - name: Install and test bundle
         working-directory: dist/guardian-free
         run: |
