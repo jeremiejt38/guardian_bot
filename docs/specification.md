@@ -933,7 +933,7 @@ Règles du module settings :
 💾 STOCKAGE DES DONNÉES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Base de données : SQLite via better-sqlite3
+Base de données : SQLite via `node:sqlite` (API native Node ≥ 22.5, `DatabaseSync`)
 Raison : léger, sans serveur externe, pas de dépendance réseau,
 suffisant pour des serveurs gaming communautaires.
 Architecture prévue pour migration future vers PostgreSQL si besoin.
