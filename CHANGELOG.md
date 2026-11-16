@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.36](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.35...v0.30.36) (2026-11-16)
+
+
+### Bug Fixes
+
+* resilience, deprecations, lint + latent bug repairs (Sprint 1-2) ([#170](https://github.com/jeremiejt38/guardian_bot/issues/170)) ([4222786](https://github.com/jeremiejt38/guardian_bot/commit/422278607475f8b56c5501aa30287082f68b93b6))
+
 ## [0.30.35](https://github.com/jeremiejt38/guardian_bot/compare/v0.30.34...v0.30.35) (2026-11-13)
 
 
