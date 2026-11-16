@@ -17,7 +17,7 @@ jobs:
           cache-dependency-path: guardian/package-lock.json
       - run: npm ci
         working-directory: guardian
-      - run: cp .env.example .env && echo "DISCORD_TOKEN=ci-test-token" >> .env
+      - run: cp guardian/.env.example guardian/.env && echo "DISCORD_TOKEN=ci-test-token" >> guardian/.env
       - run: npm test
         working-directory: guardian
       - run: npm run lint
