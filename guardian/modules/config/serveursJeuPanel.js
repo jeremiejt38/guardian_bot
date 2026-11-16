@@ -5,7 +5,8 @@ const {
   ModalBuilder,
   StringSelectMenuBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  MessageFlags
 } = require('discord.js');
 const { CHANNELS, GRADE_NAMES } = require('../../config');
 const { t } = require('../i18n');
@@ -227,14 +228,14 @@ async function handleServeursJeuInteraction(interaction) {
       ? await checkSteamUpdate(server.pelican_identifier).catch((e) => { logger.warn(`UpdateCheck failed ${server.pelican_identifier}: ${e.message}`); return null; })
       : null;
     if (res === null) {
-      await interaction.followUp({ content: 'ℹ️ Vérification de mise à jour non disponible pour ce serveur (jeu non-Steam ou manifeste introuvable).', ephemeral: true }).catch(() => {});
+      await interaction.followUp({ content: 'ℹ️ Vérification de mise à jour non disponible pour ce serveur (jeu non-Steam ou manifeste introuvable).', flags: MessageFlags.Ephemeral }).catch(() => {});
     } else if (res.update) {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`servers:doupdate:${serverId}`).setLabel('🔄 Mettre à jour').setStyle(ButtonStyle.Danger)
       );
-      await interaction.followUp({ content: `🆕 **Mise à jour disponible** pour **${server.name}** (build ${res.installed} → ${res.latest}).`, components: [row], ephemeral: true }).catch(() => {});
+      await interaction.followUp({ content: `🆕 **Mise à jour disponible** pour **${server.name}** (build ${res.installed} → ${res.latest}).`, components: [row], flags: MessageFlags.Ephemeral }).catch(() => {});
     } else {
-      await interaction.followUp({ content: `✅ **${server.name}** est à jour (build ${res.installed}).`, ephemeral: true }).catch(() => {});
+      await interaction.followUp({ content: `✅ **${server.name}** est à jour (build ${res.installed}).`, flags: MessageFlags.Ephemeral }).catch(() => {});
     }
     return true;
   }
@@ -256,7 +257,7 @@ async function handleServeursJeuInteraction(interaction) {
       logger.info(`Guild ${guildId}: update-restart ${server.pelican_identifier} by ${interaction.user.id}`);
     } catch (e) {
       logger.error(`Guild ${guildId}: update-restart failed`, e);
-      await interaction.followUp({ content: '❌ Échec du redémarrage.', ephemeral: true }).catch(() => {});
+      await interaction.followUp({ content: '❌ Échec du redémarrage.', flags: MessageFlags.Ephemeral }).catch(() => {});
     }
     return true;
   }

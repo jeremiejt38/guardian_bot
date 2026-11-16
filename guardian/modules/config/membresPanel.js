@@ -222,7 +222,7 @@ async function handleMembresInteraction(interaction) {
 
   // @premium-start
   if (interaction.isButton() && customId === IDS.editWelcomeDm) {
-    if (!isPremium(guildId)) {
+    if (!isPremiumFeatureEnabled(guildId)) {
       await replyEphemeral(interaction, '🔒 Cette feature est disponible en **Guardian Premium** uniquement.');
       return true;
     }
@@ -242,7 +242,7 @@ async function handleMembresInteraction(interaction) {
   }
 
   if (interaction.isModalSubmit() && customId === IDS.welcomeDmModal) {
-    if (!isPremium(guildId)) {
+    if (!isPremiumFeatureEnabled(guildId)) {
       await replyEphemeral(interaction, '🔒 Cette feature est disponible en **Guardian Premium** uniquement.');
       return true;
     }

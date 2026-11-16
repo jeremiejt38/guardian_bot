@@ -6,8 +6,11 @@ const { createGuildRunTracker } = require('../utils/scheduling');
 const { isNonSteamId } = require('./steamGamesList');
 const logger = require('../logs/logger');
 const { guardAsync } = require('../utils/intervalGuard');
+const { isSqliteFull, createBackoff, createGlobalBreaker, resilientInterval } = require('../utils/resilience');
 
 const runTracker = createGuildRunTracker();
+const gameBackoff = createBackoff({ baseDelayMs: 60 * 1000 });
+const fullBreaker = createGlobalBreaker('steam-changelogs');
 
 function formatChangelogMessage(gameName, item) {
   const date = item?.date ? new Date(item.date * 1000).toLocaleString('fr-FR') : 'date inconnue';
@@ -26,7 +29,7 @@ async function fetchLatestSteamNews(appId) {
   url.searchParams.set('maxlength', '1000');
   url.searchParams.set('format', 'json');
 
-  const response = await fetch(url, { method: 'GET' });
+  const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(10_000) });
   if (!response.ok) {
     throw new Error(`Steam API returned ${response.status}`);
   }
@@ -107,8 +110,16 @@ async function checkSteamChangelogs(client) {
       }
 
       for (const game of games) {
+        if (!gameBackoff.canRun(game.game_id)) {
+          continue;
+        }
         try {
           const item = await fetchLatestSteamNews(game.steam_app_id);
+          const previousFailures = gameBackoff.failures(game.game_id);
+          gameBackoff.recordSuccess(game.game_id);
+          if (previousFailures > 0) {
+            logger.info(`Steam changelog recovered for ${game.name} after ${previousFailures} failures`);
+          }
           if (!item?.gid) {
             continue;
           }
@@ -126,7 +137,14 @@ async function checkSteamChangelogs(client) {
 
           await publishChangelog(client, game, item);
         } catch (error) {
-          logger.error(`Steam changelog check failed for game ${game.name}`, error);
+          if (isSqliteFull(error)) {
+            fullBreaker.trip(error);
+            return;
+          }
+          const state = gameBackoff.recordFailure(game.game_id);
+          if (state.failures === 1 || state.failures === 5 || state.failures % 10 === 0) {
+            logger.error(`Steam changelog check failed for game ${game.name} (x${state.failures})`, { error: String(error?.message || error) });
+          }
         }
       }
 
@@ -138,9 +156,9 @@ async function checkSteamChangelogs(client) {
 }
 
 function startChangelogTimer(client, intervalMs = 60 * 1000) {
-  return setInterval(guardAsync(async () => {
+  return resilientInterval(guardAsync(async () => {
     checkSteamChangelogs(client).catch((error) => logger.error('Steam changelog timer failure', error));
-  }), intervalMs);
+  }), { intervalMs });
 }
 
 module.exports = {

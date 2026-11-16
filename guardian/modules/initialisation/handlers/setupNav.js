@@ -689,37 +689,4 @@ async function _handleNavAndTransitions(guildId, interaction) {
   return false;
 }
 
-// ─── Dispatcher principal ────────────────────────────────────────────────────
-
-async function handleSetupInteraction(interaction) {
-  const guildId = interaction.guildId;
-  if (!guildId) return false;
-  if (!interaction.customId || !interaction.customId.startsWith('setup:')) return false;
-
-  const setupOwnerId = getGuildSetting(guildId, 'setup', 'owner_id', null);
-  if (setupOwnerId && interaction.user.id !== setupOwnerId) {
-    if (interaction.isRepliable()) await replyEphemeral(interaction, t('setup.forbiddenNotOwner', {}, { guildId }));
-    return true;
-  }
-
-  if (interaction.locale && !getGuildSetting(guildId, 'i18n', 'language', null)) {
-    const { detectLanguageFromLocale: _dlfl, setGuildLanguage: _sgl } = require('../i18n');
-    _sgl(guildId, _dlfl(interaction.locale));
-  }
-
-  return (
-    await _handleStep1(guildId, interaction) ||
-    await _handleStep2(guildId, interaction) ||
-    await _handleStep3(guildId, interaction) ||
-    await _handleStep4(guildId, interaction) ||
-    await _handleStep5(guildId, interaction) ||
-    await _handleStep6(guildId, interaction) ||
-    await _handleStep7(guildId, interaction) ||
-    await _handleStep4Security(guildId, interaction) ||
-    await _handleStep8(guildId, interaction) ||
-    await _handleNavAndTransitions(guildId, interaction)
-  );
-}
-
-
 module.exports = { _handleNavAndTransitions };

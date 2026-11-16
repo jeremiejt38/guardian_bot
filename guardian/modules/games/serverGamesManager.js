@@ -296,7 +296,7 @@ async function handleServerGamesPage(interaction) {
   const { parsePaginatedCustomId } = require('../utils/paginatedSelect');
   const { targetPage } = parsePaginatedCustomId(interaction.customId);
   if (targetPage === null || Number.isNaN(targetPage)) return true;
-  const games = listServerGames(interaction.guildId);
+  const games = getGames(interaction.guildId);
   await interaction.update({
     content: t('serverGames.removeSelectPrompt', {}, { guildId: interaction.guildId }),
     components: buildRemoveSelect(interaction.guildId, games, targetPage)

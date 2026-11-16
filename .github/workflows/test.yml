@@ -1,0 +1,27 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main, beta, dev]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: guardian/package-lock.json
+      - run: npm ci
+        working-directory: guardian
+      - run: |
+          cp .env.example .env
+          cp guardian/.env.example guardian/.env
+          sed -i 's/^DISCORD_TOKEN=.*/DISCORD_TOKEN=ci-test-token/' .env guardian/.env
+      - run: npm test
+        working-directory: guardian
+      - run: npm run lint
+        working-directory: guardian

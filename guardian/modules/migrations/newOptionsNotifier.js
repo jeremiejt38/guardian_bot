@@ -13,7 +13,7 @@
  *      (step number matching the setup flow).
  */
 
-const { getGuildSetting } = require('../config/settings');
+const { getGuildSetting, setGuildSetting } = require('../config/settings');
 const { setConfig, getConfig } = require('../../database/db');
 const logger = require('../logs/logger');
 

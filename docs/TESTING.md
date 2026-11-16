@@ -40,4 +40,4 @@ Required pull-request validation:
 
 Rich Presence tests cover consent, revocation and data deletion, session tracking, user statistics, and leaderboard aggregation in `guardian/tests/richPresence.test.js`. Runtime validation also requires the Discord `Guild Presences` intent.
 
-The lowercase `docs/testing.md` file is retained as historical detailed test-suite documentation; this file is the canonical validation source.
+The `docs/testing-details.md` file is retained as historical detailed test-suite documentation; this file is the canonical validation source.

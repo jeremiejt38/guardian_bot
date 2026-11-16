@@ -1,6 +1,6 @@
 // Module premium — panneau de statut des serveurs Pelican dans un channel dédié.
 // Affiche l'état de chaque serveur (embed) + boutons start/stop/restart réservés aux managers+.
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const logger = require('../logs/logger');
 const pelican = require('./pelicanApi');
 const { getGuildSetting, setGuildSetting } = require('../config/settings');
@@ -100,7 +100,7 @@ async function handlePelicanButton(interaction) {
 
   // 'start' est ouvert aux membres ; stop/restart/kill restent réservés modos+.
   if (signal !== 'start' && !canControl(interaction.member)) {
-    await interaction.reply({ content: '🔒 Actions réservées aux managers+.', ephemeral: true });
+    await interaction.reply({ content: '🔒 Actions réservées aux managers+.', flags: MessageFlags.Ephemeral });
     return true;
   }
   await interaction.deferUpdate().catch(() => {});
@@ -114,10 +114,10 @@ async function handlePelicanButton(interaction) {
       content: `⏳ **${row?.name || identifier}** — ${label} en cours…`,
       embeds: [], components: [],
     }).catch(() => {});
-    await interaction.followUp({ content: `⏳ ${label} envoyé — le statut se mettra à jour sous ~1 min.`, ephemeral: true }).catch(() => {});
+    await interaction.followUp({ content: `⏳ ${label} envoyé — le statut se mettra à jour sous ~1 min.`, flags: MessageFlags.Ephemeral }).catch(() => {});
   } catch (err) {
     logger.error(`Pelican power ${signal} failed`, err);
-    await interaction.followUp({ content: `❌ Échec de l'action ${signal}.`, ephemeral: true }).catch(() => {});
+    await interaction.followUp({ content: `❌ Échec de l'action ${signal}.`, flags: MessageFlags.Ephemeral }).catch(() => {});
   }
   // Rafraîchit l'embed admin ET la liste membre après l'action.
   setTimeout(() => refreshStatusMessage(interaction.guild).catch(() => {}), 4000);
